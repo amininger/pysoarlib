@@ -5,7 +5,7 @@ STRING_VAL = "string"
 ## Given id and attribute, returns value for WME as string (self ^attribute value)
 def get_child_str(self, attribute): 
     wme = self.FindByAttribute(attribute, 0)
-    if wme == None or wme.GetValueAsString().length() == 0:
+    if wme == None or len(wme.GetValueAsString()) == 0:
         return None
     return wme.GetValueAsString()
 
