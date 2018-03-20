@@ -78,6 +78,7 @@ class LanguageConnector(AgentConnector):
     def on_init_soar(self):
         if self.current_message != None:
             self.current_message.remove_from_wm()
+            self.current_message = None
         if self.language_id != None:
             self.language_id.DestroyWME()
             self.language_id = None

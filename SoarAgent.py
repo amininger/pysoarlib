@@ -56,21 +56,30 @@ class SoarAgent:
         self.seconds = SoarWME("seconds", 0)
         self.steps = SoarWME("steps", 0)
 
-        self.agent = self.kernel.CreateAgent(self.config.agent_name)
-        if self.config.spawn_debugger:
-            success = self.agent.SpawnDebugger(self.kernel.GetListenerPort())
+        if self.config.write_log:
+            self.log_writer = open("rosie-log.txt", 'w')
 
         self.run_event_callback_ids = []
         self.print_event_callback_id = -1
         self.init_agent_callback_id = -1
-
-        if self.config.write_log:
-            self.log_writer = open("rosie-log.txt", 'w')
-
-        self.source_agent()
-        self.agent.ExecuteCommandLine("w " + str(self.config.watch_level))
-
         self.connectors = {}
+
+        self.create_soar_agent()
+
+    def start(self):
+        if self.is_running:
+            return
+
+        self.is_running = True
+        thread = Thread(target = SoarAgent.run_thread, args = (self, ))
+        thread.start()
+
+    def stop(self):
+        self.queue_stop = True
+
+    def execute_command(self, cmd):
+        self.print_handler(cmd)
+        self.print_handler(self.agent.ExecuteCommandLine(cmd)  + "\n")
 
     def connect(self):
         if self.connected:
@@ -114,6 +123,30 @@ class SoarAgent:
 
         self.connected = False
 
+    def reset(self):
+        self.destroy_soar_agent()
+        self.create_soar_agent()
+        self.connect()
+
+    def kill(self):
+        self.destroy_soar_agent()
+        self.kernel.Shutdown()
+
+
+#### Internal Methods
+
+    def run_thread(self):
+        self.agent.ExecuteCommandLine("run")
+        self.is_running = False
+
+    def create_soar_agent(self):
+        self.agent = self.kernel.CreateAgent(self.config.agent_name)
+        if self.config.spawn_debugger:
+            success = self.agent.SpawnDebugger(self.kernel.GetListenerPort())
+
+        self.source_agent()
+        self.agent.ExecuteCommandLine("w " + str(self.config.watch_level))
+
     def source_agent(self):
         self.agent.ExecuteCommandLine("smem --set database memory")
         self.agent.ExecuteCommandLine("epmem --set database memory")
@@ -133,55 +166,32 @@ class SoarAgent:
             self.print_handler("WARNING! agent-source not set in config file, not sourcing any rules")
 
 
-    def start(self):
-        if self.is_running:
-            return
+    def on_init_soar(self):
+        for connector in self.connectors.values():
+            connector.on_init_soar()
+        self.seconds.remove_from_wm()
+        self.steps.remove_from_wm()
+        if self.time_id:
+            self.time_id.DestroyWME()
+            self.time_id = None
 
-        self.is_running = True
-        thread = Thread(target = SoarAgent.run_thread, args = (self, ))
-        thread.start()
-
-    def run_thread(self):
-        self.agent.ExecuteCommandLine("run")
-        self.is_running = False
-
-    def stop(self):
-        self.queue_stop = True
-
-    def kill(self):
-        # Wait for running thread to finish
-        self.queue_stop = True
+    def destroy_soar_agent(self):
+        self.stop()
         while self.is_running:
             time.sleep(0.01)
-
+        self.on_init_soar()
         self.disconnect()
-        if self.config.write_log:
-            self.log_writer.close()
-
         if self.config.spawn_debugger:
             self.agent.KillDebugger()
-
         self.kernel.DestroyAgent(self.agent)
         self.agent = None
-
-        self.kernel.Shutdown()
-
-    def execute_command(self, cmd):
-        self.print_handler(cmd)
-        self.print_handler(self.agent.ExecuteCommandLine(cmd)  + "\n")
 
     @staticmethod
     def init_agent_handler(eventID, self, info):
         try:
-            for connector in self.connectors.values():
-                connector.on_init_soar()
-            self.seconds.remove_from_wm()
-            self.steps.remove_from_wm()
-            self.time_id.DestroyWME()
-            self.time_id = None
+            self.on_init_soar()
         except:
             self.print_handler("ERROR IN INIT AGENT")
-
 
     @staticmethod
     def run_event_handler(eventID, self, agent, phase):
