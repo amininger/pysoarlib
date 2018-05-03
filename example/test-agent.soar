@@ -1,0 +1,67 @@
+# Very simple agent that copies a number from the input link, 
+# Then increments it by ever increasing amounts
+# 
+# Will print 1, 3, 6, 10, 15, 21, etc.
+
+sp {topstate*propose*init-agent
+   (state <s> ^superstate nil
+             -^name test-agent)
+-->
+   (<s> ^operator <o> + >)
+   (<o> ^name init-agent)
+}
+
+sp {topstate*apply*init-agent
+   (state <s> ^superstate nil
+              ^operator.name init-agent)
+-->
+   (<s> ^name test-agent
+        ^current-increment 1
+        ^current-number 0)
+}
+
+sp {topstate*propose*update-number
+   (state <s> ^name test-agent
+              ^io.input-link.number <new>
+              ^current-number {<cur> <> <new>})
+-->
+   (<s> ^operator <o> + >)
+   (<o> ^name update-number
+        ^new-number <new>)
+}
+
+sp {top-state*apply*update-number
+   (state <s> ^name test-agent
+              ^operator <o>
+              ^current-number <old>)
+   (<o> ^name update-number
+        ^new-number <new>)
+-->
+   (<s> ^current-number <old> -
+        ^current-number <new>)
+   (write (crlf) |New Number = | <new>)
+}
+
+sp {topstate*propose*increment
+   (state <s> ^name test-agent
+              ^current-number <n>
+              ^current-increment <inc>)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name increment
+        ^amount <inc>)
+}
+
+sp {topstate*apply*increment
+   (state <s> ^name test-agent
+              ^operator <o>
+              ^io.output-link <out>
+              ^current-increment <inc>)
+   (<o> ^name increment
+        ^amount <inc>)
+-->
+   (<out> ^increment <cmd>)
+   (<cmd> ^number <inc>)
+   (<s> ^current-increment <inc> -
+        ^current-increment (+ <inc> 1))
+}
