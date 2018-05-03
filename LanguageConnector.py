@@ -1,7 +1,12 @@
+""" Used in the Rosie project to send and receive messages from the agent
+
+Adds English sentences as a linked list of words on input-link.language
+Handles send-message commands on the output link
+"""
 import sys
 
 from string import digits
-from AgentConnector import AgentConnector
+from .AgentConnector import AgentConnector
 
 class Message:
     def __init__(self, message, num):
@@ -64,7 +69,7 @@ class LanguageConnector(AgentConnector):
     def __init__(self, agent, print_handler=None):
         AgentConnector.__init__(self, agent, print_handler)
         self.agent_message_callback = None
-        self.register_output_handler("send-message")
+        self.add_output_command("send-message")
 
         self.current_message = None
         self.next_message_id = 1
@@ -101,8 +106,8 @@ class LanguageConnector(AgentConnector):
         if len(self.messages_to_remove) > 0:
             self.messages_to_remove = set()
 
-    def on_output_event(self, att_name, root_id):
-        if att_name == "send-message":
+    def on_output_event(self, command_name, root_id):
+        if command_name == "send-message":
             self.process_output_link_message(root_id)
 
     def process_output_link_message(self, root_id):
