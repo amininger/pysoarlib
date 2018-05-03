@@ -125,6 +125,10 @@ class SoarAgent:
 
         self.__create_soar_agent()
 
+    def add_connector(self, name, connector):
+        """ Adds an AgentConnector to the agent """
+        self.connectors[name] = connector
+
     def start(self):
         """ Will start the agent (uses another thread, so non-blocking) """
         if self.is_running:

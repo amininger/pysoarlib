@@ -1,8 +1,9 @@
 from pysoarlib import *
+from SimpleConnector import SimpleConnector
 
-from SimpleAgent import SimpleAgent
 
-agent = SimpleAgent(AgentConfig.create_from_file("agent.config"))
+agent = SoarAgent(AgentConfig.create_from_file("agent.config"))
+agent.add_connector("simple", SimpleConnector(agent))
 agent.connect()
 
 for i in range(10):
