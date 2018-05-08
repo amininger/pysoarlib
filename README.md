@@ -76,20 +76,12 @@ Event Handler called when a new output link command is created `(<output-link> ^
 ## SoarAgent
 Defines a class used for creating a soar agent, sending commands, running it, etc.
 
-`SoarAgent(agent_config:AgentConfig, print_handler=None)` 
+`SoarAgent(config_filename=None, print_handler=None, **kwargs)` 
 Will create the soar kernel and agent, as well as source the agent files
 print_handler specifies how output is handled (defaults to python print())
+config_filename names a file with agent settings in it
 
-#### AgentConfig
-Defines a list of settings to use to configure the SoarAgent
-Can either create by passing in settings as kwargs, 
-or use AgentConfig.create_from_file(filename) where the settings are in a file
-
-###
-config_file must exit
-
-
-#### Config Settings
+#### Config Settings (kwargs)
 * agent_name = [name] 
 The name of the agent to use when creating it
 * agent_source = [filename] 
@@ -107,7 +99,20 @@ If true, will echo any soar output/printing via print_handler
 * enable_log = [bool] 
 If true, will write any soar output/printing to file agent-log.log
 
+#### Config File
+Instead of passing as arguments, you can pass in a filename as config_filename
+Each line in the file should be 'setting = value'
+Also, setting names use hyphens instead of underscores
+Example File:
+	agent-name = Rosie
+	agent-source = agent.soar
+	spawn-debugger = false
+
+
 #### SoarAgent Methods
+
+`add_connector(AgentConnector)`
+Adds the given connector and will invoke callbacks on it (such as on_input_phase)
 
 `connect()` 
 Will register callbacks (call before running)

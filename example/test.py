@@ -2,7 +2,7 @@ from pysoarlib import *
 from SimpleConnector import SimpleConnector
 
 
-agent = SoarAgent(AgentConfig.create_from_file("agent.config"))
+agent = SoarAgent(config_filename="agent.config")
 agent.add_connector("simple", SimpleConnector(agent))
 agent.connect()
 

@@ -9,11 +9,50 @@ from .SoarWME import SoarWME
 
 current_time_ms = lambda: int(round(time.time() * 1000))
 
-class AgentConfig:
-    """ 
-        Settings used to configure a SoarAgent instance
+def parse_agent_kwargs_from_file(config_filename):
+    """ Parses a config file and returns a dictionary with the parsed agent settings
 
-        ============== Config Settings =============
+    Will throw an error if the file doesn't exist
+    Config file is a text file with lines of the form 'setting = value'
+    It uses the same setting names as above, but with - intead of _
+        e.g. agent-name = Rosie
+    """
+    # Read config file
+    props = {}
+    with open(config_filename, 'r') as fin:
+        for line in fin:
+            args = line.split()
+            if len(args) == 3 and args[1] == '=':
+                props[args[0]] = args[2]
+
+    # Set config values
+    kwargs = {}
+    kwargs["agent_name"] = props.get("agent-name", "soaragent")
+    kwargs["agent_source"] = props.get("agent-source", None)
+    kwargs["smem_source"] = props.get("smem-source", None)
+
+    kwargs["messages_file"] = props.get("messages-file", None)
+
+    kwargs["verbose"] = props.get("verbose", "false").lower() == "true"
+    kwargs["watch_level"] = int(props.get("watch-level", "1"))
+    kwargs["spawn_debugger"] = props.get("spawn-debugger", "false").lower() == "true"
+    kwargs["write_to_stdout"] = props.get("write-to-stdout", "false").lower() == "true"
+    kwargs["enable_log"] = props.get("enable-log", "false").lower() == "true"
+
+    return kwargs
+
+class SoarAgent:
+    """ A wrapper class for creating and using a soar SML Agent """
+    def __init__(self, print_handler=None, config_filename=None, **kwargs):
+        """ Will create a soar kernel and agent
+
+        print_handler determines how output is printed, defaults to python print
+        config_filename if specified will read config info (kwargs) from a file
+            Config file is a text file with lines of the form 'setting = value'
+            It uses the same setting names as above, but with - intead of _
+                e.g. agent-name = Rosie
+
+        ============== kwargs =============
 
         agent_name = [string] (default=soaragent)
             Name to give the SML Agent when it is created
@@ -38,9 +77,15 @@ class AgentConfig:
 
         enable_log = true|false
             If true, will write all soar output to a file called agent-log.txt
-    """
-    def __init__(self, **kwargs):
-        """ Initializes the config with the given settings as keyword arguments """
+        
+        Note: Still need to call connect() to register event handlers
+        """
+        if config_filename:
+            # Add settings from config file if not overridden in kwargs
+            config_kwargs = parse_agent_kwargs_from_file(config_filename)
+            for key, value in config_kwargs.items():
+                if key not in kwargs:
+                    kwargs[key] = value
 
         self.agent_name = kwargs.get("agent_name", "soaragent")
         self.agent_source = kwargs.get("agent_source", None)
@@ -53,51 +98,6 @@ class AgentConfig:
         self.enable_log = kwargs.get("enable_log", False)
 
         self.messages_file = kwargs.get("messages_file", None)
-
-    @staticmethod
-    def create_from_file(config_filename):
-        """ Parses a config file and returns an AgentConfig instance using settings from the file
-
-        Will throw an error if the file doesn't exist
-        Config file is a text file with lines of the form 'setting = value'
-        It uses the same setting names as above, but with - intead of _
-            e.g. agent-name = Rosie
-        """
-        # Read config file
-        props = {}
-        with open(config_filename, 'r') as fin:
-            for line in fin:
-                args = line.split()
-                if len(args) == 3 and args[1] == '=':
-                    props[args[0]] = args[2]
-
-        # Set config values
-        settings = {}
-        settings["agent_name"] = props.get("agent-name", "soaragent")
-        settings["agent_source"] = props.get("agent-source", None)
-        settings["smem_source"] = props.get("smem-source", None)
-
-        settings["messages_file"] = props.get("messages-file", None)
-
-        settings["verbose"] = props.get("verbose", "false").lower() == "true"
-        settings["watch_level"] = int(props.get("watch-level", "1"))
-        settings["spawn_debugger"] = props.get("spawn-debugger", "false").lower() == "true"
-        settings["write_to_stdout"] = props.get("write-to-stdout", "false").lower() == "true"
-        settings["enable_log"] = props.get("enable-log", "false").lower() == "true"
-
-        return AgentConfig(**settings)
-
-class SoarAgent:
-    """ A wrapper class for creating and using a soar SML Agent """
-    def __init__(self, agent_config, print_handler=None):
-        """ Will create a soar kernel and agent
-
-        agent_config is an instance of AgentConfig
-        print_handler determines how output is printed, defaults to python print
-        
-        Note: Still need to call connect() to register event handlers
-        """
-        self.config = agent_config
 
         self.connected = False
         self.is_running = False
@@ -115,7 +115,7 @@ class SoarAgent:
         self.seconds = SoarWME("seconds", 0)
         self.steps = SoarWME("steps", 0)
 
-        if self.config.enable_log:
+        if self.enable_log:
             self.log_writer = open("agent-log.txt", 'w')
 
         self.run_event_callback_id = -1
@@ -157,7 +157,7 @@ class SoarAgent:
         self.run_event_callback_id = self.agent.RegisterForRunEvent(
             sml.smlEVENT_BEFORE_INPUT_PHASE, SoarAgent.__run_event_handler, self)
 
-        if self.config.enable_log or self.config.write_to_stdout:
+        if self.enable_log or self.write_to_stdout:
             self.print_event_callback_id = self.agent.RegisterForPrintEvent(
                     sml.smlEVENT_PRINT, SoarAgent.__print_event_handler, self)
 
@@ -210,31 +210,30 @@ class SoarAgent:
         self.is_running = False
 
     def __create_soar_agent(self):
-        self.agent = self.kernel.CreateAgent(self.config.agent_name)
-        if self.config.spawn_debugger:
+        self.agent = self.kernel.CreateAgent(self.agent_name)
+        if self.spawn_debugger:
             success = self.agent.SpawnDebugger(self.kernel.GetListenerPort())
 
         self.__source_agent()
-        self.agent.ExecuteCommandLine("w " + str(self.config.watch_level))
+        self.agent.ExecuteCommandLine("w " + str(self.watch_level))
 
     def __source_agent(self):
         self.agent.ExecuteCommandLine("smem --set database memory")
         self.agent.ExecuteCommandLine("epmem --set database memory")
 
-        if self.config.smem_source != None:
+        if self.smem_source != None:
             self.print_handler("------------- SOURCING SMEM ---------------")
-            result = self.agent.ExecuteCommandLine("source " + self.config.smem_source)
-            if self.config.verbose:
+            result = self.agent.ExecuteCommandLine("source " + self.smem_source)
+            if self.verbose:
                 self.print_handler(result)
 
-        if self.config.agent_source != None:
+        if self.agent_source != None:
             self.print_handler("--------- SOURCING PRODUCTIONS ------------")
-            result = self.agent.ExecuteCommandLine("source " + self.config.agent_source)
-            if self.config.verbose:
+            result = self.agent.ExecuteCommandLine("source " + self.agent_source)
+            if self.verbose:
                 self.print_handler(result)
         else:
-            self.print_handler("WARNING! agent-source not set in config file, not sourcing any rules")
-
+            self.print_handler("agent_source not specified, no rules are being sourced")
 
     def __on_init_soar(self):
         for connector in self.connectors.values():
@@ -251,7 +250,7 @@ class SoarAgent:
             time.sleep(0.01)
         self.__on_init_soar()
         self.disconnect()
-        if self.config.spawn_debugger:
+        if self.spawn_debugger:
             self.agent.KillDebugger()
         self.kernel.DestroyAgent(self.agent)
         self.agent = None
@@ -305,9 +304,9 @@ class SoarAgent:
     @staticmethod
     def __print_event_handler(eventID, self, agent, message):
         try:
-            if self.config.write_to_stdout:
+            if self.write_to_stdout:
                 self.print_handler(message)
-            if self.config.enable_log:
+            if self.enable_log:
                 self.log_writer.write(message)
         except:
             self.print_handler("ERROR IN PRINT HANDLER")
