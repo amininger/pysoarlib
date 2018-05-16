@@ -1,13 +1,10 @@
-import sys
-
-from string import digits
 from pysoarlib import *
 
 class SimpleConnector(AgentConnector):
     def __init__(self, agent):
         AgentConnector.__init__(self, agent)
-        self.add_output_command("increment")
-        self.num = SoarWME("number", 1)
+        self.add_output_command("increase-number")
+        self.num = SoarWME("number", 0)
 
     def on_input_phase(self, input_link):
         if not self.num.is_added():
@@ -16,18 +13,22 @@ class SimpleConnector(AgentConnector):
             self.num.update_wm()
 
     def on_init_soar(self):
-        svs_commands = []
         self.num.remove_from_wm()
 
     def on_output_event(self, command_name, root_id):
-        if command_name == "increment":
-            self.process_increment_command(root_id)
+        if command_name == "increase-number":
+            self.process_increase_command(root_id)
     
-    def process_increment_command(self, root_id):
+    def process_increase_command(self, root_id):
         number = root_id.GetChildInt("number")
-        if number == None:
-            self.print_handler("!!! No number provided on increment command !!!")
-            root_id.CreateStringWME("status", "error")
-        else:
+        if number:
             self.num.set_value(self.num.val + number)
-            root_id.CreateStringWME("status", "success")
+        root_id.AddStatusComplete()
+
+agent = SoarAgent(agent_source="test-agent.soar", write_to_stdout=True)
+agent.add_connector("simple", SimpleConnector(agent))
+agent.connect()
+
+agent.execute_command("run 12")
+
+agent.kill()
