@@ -23,21 +23,25 @@ def parse_agent_kwargs_from_file(config_filename):
         for line in fin:
             args = line.split()
             if len(args) == 3 and args[1] == '=':
-                props[args[0]] = args[2]
+                props[args[0].replace("-", "_")] = args[2]
 
     # Set config values
     kwargs = {}
-    kwargs["agent_name"] = props.get("agent-name", "soaragent")
-    kwargs["agent_source"] = props.get("agent-source", None)
-    kwargs["smem_source"] = props.get("smem-source", None)
+    kwargs["agent_name"] = props.get("agent_name", "soaragent")
+    kwargs["agent_source"] = props.get("agent_source", None)
+    kwargs["smem_source"] = props.get("smem_source", None)
 
-    kwargs["messages_file"] = props.get("messages-file", None)
+    kwargs["messages_file"] = props.get("messages_file", None)
 
     kwargs["verbose"] = props.get("verbose", "false").lower() == "true"
-    kwargs["watch_level"] = int(props.get("watch-level", "1"))
-    kwargs["spawn_debugger"] = props.get("spawn-debugger", "false").lower() == "true"
-    kwargs["write_to_stdout"] = props.get("write-to-stdout", "false").lower() == "true"
-    kwargs["enable_log"] = props.get("enable-log", "false").lower() == "true"
+    kwargs["watch_level"] = int(props.get("watch_level", "1"))
+    kwargs["spawn_debugger"] = props.get("spawn_debugger", "false").lower() == "true"
+    kwargs["write_to_stdout"] = props.get("write_to_stdout", "false").lower() == "true"
+    kwargs["enable_log"] = props.get("enable_log", "false").lower() == "true"
+
+    for prop in props:
+        if prop not in kwargs:
+            kwargs[prop] = props[prop]
 
     return kwargs
 
@@ -87,6 +91,7 @@ class SoarAgent:
                 if key not in kwargs:
                     kwargs[key] = value
 
+        self.settings = kwargs
         self.agent_name = kwargs.get("agent_name", "soaragent")
         self.agent_source = kwargs.get("agent_source", None)
         self.smem_source = kwargs.get("smem_source", None)
