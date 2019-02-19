@@ -117,8 +117,9 @@ class SoarAgent:
 
         self.start_time = current_time_ms()
         self.time_id = None
-        self.seconds = SoarWME("seconds", 0)
-        self.steps = SoarWME("steps", 0)
+
+        self.time_info = [8, 0, 0, 0, 0, 0] # [ hour, min, sec, tot-sec, real-world-sec, # steps (dc's)]
+        self.time_wmes = [ SoarWME("clock-hour", 8), SoarWME("clock-min", 0), SoarWME("clock-sec", 0), SoarWME("total-secs", 0), SoarWME("seconds", 0), SoarWME("steps", 0) ]
 
         if self.enable_log:
             self.log_writer = open("agent-log.txt", 'w')
@@ -243,8 +244,10 @@ class SoarAgent:
     def __on_init_soar(self):
         for connector in self.connectors.values():
             connector.on_init_soar()
-        self.seconds.remove_from_wm()
-        self.steps.remove_from_wm()
+        self.start_time = current_time_ms()
+        self.time_info = [8, 0, 0, 0, 0, 0]
+        for wme in self.time_wmes:
+            wme.remove_from_wm()
         if self.time_id:
             self.time_id.DestroyWME()
             self.time_id = None
@@ -279,19 +282,32 @@ class SoarAgent:
                 self.agent.StopSelf()
                 self.queue_stop = False
 
-            # Timing Info
+            # Update time information
+            self.time_info[2] += 5
+            if self.time_info[2] >= 60:
+                self.time_info[2] -= 60
+                self.time_info[1] += 1
+                if self.time_info[1] >= 60:
+                    self.time_info[1] -= 60
+                    self.time_info[0] += 1
+                    if self.time_info[0] >= 24:
+                        self.time_info[0] -= 24
+            self.time_info[3] += 5
+            self.time_info[4] = int((current_time_ms() - self.start_time)/1000)
+            self.time_info[5] += 1
+
+            for i, val in enumerate(self.time_info):
+                self.time_wmes[i].set_value(val)
+
+            # Update time wmes
             if self.time_id == None:
-                self.start_time = current_time_ms()
                 self.time_id = self.agent.GetInputLink().CreateIdWME("time")
-                self.seconds.set_value(0)
-                self.seconds.add_to_wm(self.time_id)
-                self.steps.set_value(0)
-                self.steps.add_to_wm(self.time_id)
+                for wme in self.time_wmes:
+                    wme.add_to_wm(self.time_id)
             else:
-                self.seconds.set_value(int((current_time_ms() - self.start_time)/1000))
-                self.seconds.update_wm()
-                self.steps.set_value(self.steps.val + 1)
-                self.steps.update_wm()
+                for wme in self.time_wmes:
+                    wme.update_wm()
+
 
             for connector in self.connectors.values():
                 connector.on_input_phase(self.agent.GetInputLink())

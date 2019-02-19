@@ -5,6 +5,8 @@ A Connector can be added to a SoarAgent and can handle input/output
 """
 
 from __future__ import print_function
+ 
+import traceback, sys
 
 class AgentConnector(object):
     """ Base Class for handling input/output for a soar agent
@@ -86,6 +88,7 @@ class AgentConnector(object):
                 self.on_output_event(att_name, root_id)
         except:
             self.print_handler("ERROR IN OUTPUT EVENT HANDLER")
-            self.print_handler(sys.exec_info())
+            self.print_handler(traceback.format_exc())
+            self.print_handler("--------- END ---------------")
 
         self.connected = True
