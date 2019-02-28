@@ -33,6 +33,8 @@ class Message:
             punct = self.message[-1]
             self.message = self.message[:-1]
 
+        self.message = self.message.replace('|', '"')
+
         quote = None
         begin_quote = self.message.find('"')
         end_quote = self.message.find('"', begin_quote+1)
