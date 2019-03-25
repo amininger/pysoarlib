@@ -9,7 +9,10 @@ from string import digits
 from .AgentConnector import AgentConnector
 
 class Message:
+    """ Represents a single sentence that can be added to working memory as a linked list """
     def __init__(self, message, num):
+        """ message:string - a single natural language sentence
+            num:int - a number indicating the id of the message """
         self.message = message.strip()
         self.num = num
 
@@ -28,13 +31,15 @@ class Message:
         self.message_id.CreateStringWME("complete-sentence", self.message)
         self.message_id.CreateStringWME("spelling", "*")
 
+        # Get the punctutation character, if exists, and remove it
         punct = '.'
         if self.message[-1] in ".!?":
             punct = self.message[-1]
             self.message = self.message[:-1]
 
+        # If there is a quote in the sentence, adds it as a single unit (not broken into words)
+        # (In place of the quote, puts a _XXX_ placeholder)
         self.message = self.message.replace('|', '"')
-
         quote = None
         begin_quote = self.message.find('"')
         end_quote = self.message.find('"', begin_quote+1)
@@ -42,17 +47,20 @@ class Message:
             quote = self.message[begin_quote+1:end_quote]
             self.message = self.message[:begin_quote] + "_XXX_" + self.message[end_quote+1:]
 
+        # Create a linked list of words with next pointers
         next_id = self.message_id.CreateIdWME("next")
         words = self.message.split()
         for word in words:
             if len(word) == 0:
                 continue
             if word == "_XXX_":
+                # Add the quote as a whole
                 word = quote
                 next_id.CreateStringWME("quoted", "true")
             next_id.CreateStringWME("spelling", word.lower())
             next_id = next_id.CreateIdWME("next")
         
+        # Add punctuation at the end
         next_id.CreateStringWME("spelling", str(punct))
         next_id.CreateStringWME("next", "nil")
         self.added = True
@@ -68,9 +76,12 @@ class Message:
         self.added = False
 
 class LanguageConnector(AgentConnector):
+    """ Will handle natural language input and output to a soar agent
+        For input - will add sentences onto the input link as a linked list
+        For output - will take a message type and generate a natural language sentence """
     def __init__(self, agent, print_handler=None):
         AgentConnector.__init__(self, agent, print_handler)
-        self.agent_message_callback = None
+        self.agent_message_callbacks = []
         self.add_output_command("send-message")
 
         self.current_message = None
@@ -80,7 +91,7 @@ class LanguageConnector(AgentConnector):
         self.messages_to_remove = set()
 
     def register_message_callback(self, agent_message_callback):
-        self.agent_message_callback = agent_message_callback
+        self.agent_message_callbacks.append(agent_message_callback)
 
     def on_init_soar(self):
         if self.current_message != None:
@@ -113,15 +124,66 @@ class LanguageConnector(AgentConnector):
             self.process_output_link_message(root_id)
 
     def process_output_link_message(self, root_id):
-        if root_id.GetNumberChildren() == 0:
+        message_type = root_id.GetChildString("type");
+        if not message_type:
             root_id.CreateStringWME("status", "error")
-            self.print_handler("LanguageConnector: Error - message has no children")
+            root_id.CreateStringWME("error-info", "send-message has no type")
+            self.print_handler("LanguageConnector: Error - send-message has no type")
             return
 
-        for i in range(root_id.GetNumberChildren()):
-            child_wme = root_id.GetChild(i)
-            if child_wme.GetAttribute() == "type":
-                if self.agent_message_callback != None:
-                    self.agent_message_callback("Rosie: " + child_wme.GetValueAsString())
-                break
+        message = self.translate_agent_message(root_id, message_type)
+        for callback in self.agent_message_callbacks:
+            callback(message)
         root_id.CreateStringWME("status", "complete")
+
+    def translate_agent_message(self, root_id, message_type):
+        message = LanguageConnector.simple_messages.get(message_type);
+        if message:
+            return message
+        return message_type
+
+    simple_messages = {
+        "ok": "Ok",
+        "unable-to-satisfy": "I couldn't do that",
+        "unable-to-interpret-message": "I don't understand.",
+        "missing-object": "I lost the object I was using. Can you help me find it?",
+        "index-object-failure": "I couldn't find the referenced object",
+        "no-proposed-action": "I couldn't do that",
+        "missing-argument": "I need more information to do that action",
+        "learn-location-failure": "I don't know where I am.",
+        "get-goal-info": "What is the goal?",
+        "no-action-context-for-goal": "I don't know what action that goal is for",
+        "get-next-task": "I'm ready for a new task",
+        "get-next-subaction": "What do I do next?",
+        "confirm-pick-up": "I have picked up the object.",
+        "confirm-put-down": "I have put down the object.",
+        "stop-leading": "You can stop following me",
+        "retrospective-learning-failure": "I was unable to learn the task policy",
+        
+        #added for games and puzzles
+        "your-turn": "Your turn.",
+        "i-win": "I win!",
+        "i-lose": "I lose.",
+        "easy": "That was easy!",
+        "describe-game": "Please setup the game.",
+        "describe-puzzle": "Please setup the puzzle.",
+        "setup-goal": "Please setup the goal state.",
+        "tell-me-go": "Ok: tell me when to go.",
+        "setup-failure": "Please setup the failure condition.",
+        "define-actions": "Can you describe the legal actions?",
+        "describe-action": "What are the conditions of the action.",
+        "describe-goal": "Please describe or demonstrate the goal.",
+        "describe-failure": "Please describe the failure condition.",
+        "learned-goal": "I have learned the goal.",
+        "learned-action": "I have learned the action.",
+        "learned-failure": "I have learned the failure condition.",
+        "learned-heuristic": "I have learned the heuristic.",
+        "already-learned-goal": "I know that goal and can recognize it.",
+        "already-learned-action": "I know that action and can recognize it.",
+        "already-learned-failure": "I know that failure condition and can recognize it.",
+        "gotit": "I've found a solution."
+    }
+
+
+
+
