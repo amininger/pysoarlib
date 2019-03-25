@@ -14,6 +14,7 @@ class Message(WMInterface):
     def __init__(self, message, num):
         """ message:string - a single natural language sentence
             num:int - a number indicating the id of the message """
+        WMInterface.__init__(self)
         self.message = message.strip()
         self.num = num
 
