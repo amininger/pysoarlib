@@ -36,6 +36,21 @@ If no attribute is specified, all child Identifiers are returned
 Given an attribute, returns a list of strings from all child WME's matching `(<id> ^attribute <value>)`
 If no attribute is specified, all child WME values (non-identifiers) are returned
 
+## WMInterface:
+An interface class which defines a standard way of adding/removing structures from working memory:
+
+`is_added()`
+Returns True if the structure is currently added to working memory
+
+`add_to_wm(parent_id)`
+Adds the structure to working memory under the given identifier
+
+`update_wm()`
+Applies any changes to working memory
+
+`remove_from_wm()`
+Removes the structure from working memory
+
 ## SoarWME:
 A class which can represent a WMElement with an `(<id> ^att value)` but takes care of actually interfacing with working memory
 

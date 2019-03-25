@@ -6,9 +6,10 @@ Handles send-message commands on the output link
 import sys
 
 from string import digits
+from .WMInterface import WMInterface
 from .AgentConnector import AgentConnector
 
-class Message:
+class Message(WMInterface):
     """ Represents a single sentence that can be added to working memory as a linked list """
     def __init__(self, message, num):
         """ message:string - a single natural language sentence
@@ -17,15 +18,8 @@ class Message:
         self.num = num
 
         self.message_id = None
-        self.added = False
 
-    def is_added(self):
-        return self.added
-
-    def add_to_wm(self, parent_id):
-        if self.added:
-            self.remove_from_wm()
-
+    def _add_to_wm_impl(self, parent_id):
         self.message_id = parent_id.CreateIdWME("sentence")
         self.message_id.CreateIntWME("sentence-number", self.num)
         self.message_id.CreateStringWME("complete-sentence", self.message)
@@ -63,17 +57,10 @@ class Message:
         # Add punctuation at the end
         next_id.CreateStringWME("spelling", str(punct))
         next_id.CreateStringWME("next", "nil")
-        self.added = True
 
-    def update_wm(self):
-        pass
-
-    def remove_from_wm(self):
-        if not self.added or self.message_id == None:
-            return
+    def _remove_from_wm_impl(self):
         self.message_id.DestroyWME()
         self.message_id = None
-        self.added = False
 
 class LanguageConnector(AgentConnector):
     """ Will handle natural language input and output to a soar agent

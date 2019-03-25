@@ -38,7 +38,7 @@ class AgentConnector(object):
         """ Will cause the connector to handle commands with the given name on the output-link """
         if self.connected:
             self.output_handler_ids[command_name] = self.agent.agent.AddOutputHandler(
-                    command_name, AgentConnector.__output_event_handler, self)
+                    command_name, AgentConnector._output_event_handler, self)
         else:
             self.output_handler_ids[command_name] = -1
 
@@ -49,7 +49,7 @@ class AgentConnector(object):
 
         for command_name in self.output_handler_ids:
             self.output_handler_ids[command_name] = self.agent.agent.AddOutputHandler(
-                    command_name, AgentConnector.__output_event_handler, self)
+                    command_name, AgentConnector._output_event_handler, self)
 
         self.connected = True
 
@@ -80,7 +80,7 @@ class AgentConnector(object):
         pass
 
     @staticmethod
-    def __output_event_handler(self, agent_name, att_name, wme):
+    def _output_event_handler(self, agent_name, att_name, wme):
         """ OutputHandler callback for when a command is put on the output link """
         try:
             if wme.IsJustAdded() and wme.IsIdentifier():
