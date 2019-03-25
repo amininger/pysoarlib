@@ -20,11 +20,14 @@ class WMInterface(object):
         self._add_to_wm_impl(parent_id)
         self.added = True
 
-    def update_wm(self):
-        """ Updates the structure in Soar's working memory """
-        if not self.added:
-            return
-        self._update_wm_impl()
+    def update_wm(self, parent_id = None):
+        """ Updates the structure in Soar's working memory
+            It will also add it to wm if parent_id is not None """
+        if self.added:
+            self._update_wm_impl()
+        elif parent_id:
+            self._add_to_wm_impl(parent_id)
+            self.added = True
 
     def remove_from_wm(self):
         """ Removes the structure from Soar's working memory """

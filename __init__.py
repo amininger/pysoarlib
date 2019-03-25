@@ -3,6 +3,7 @@
 Depends on the Python_sml_ClientInterface, so make sure that SOAR_HOME is on the PYTHONPATH
 
 SoarAgent and AgentConnector are used to create an agent
+WMInterface is a standardized interface for adding/removing structures from working memory
 SoarWME is a wrapper for creating working memory elements
 SVSCommands will generate svs command strings for some common use cases
 

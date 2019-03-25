@@ -45,8 +45,9 @@ Returns True if the structure is currently added to working memory
 `add_to_wm(parent_id)`
 Adds the structure to working memory under the given identifier
 
-`update_wm()`
+`update_wm(parent_id=None)`
 Applies any changes to working memory
+Note, if a `parent_id` is given and the item is not yet added to wm, it will add it
 
 `remove_from_wm()`
 Removes the structure from working memory
@@ -149,6 +150,9 @@ Completely destroys the agent and creates + sources a new one
 
 `kill()` 
 Will stop the agent destroy the agent/kernel
+
+## TimeInfo
+Adds timing information to the input-link, used internally by SoarAgent
 	
 
 ## LanguageConnector

@@ -1,13 +1,11 @@
 from __future__ import print_function
 
 import sys
-import time
 from threading import Thread
 
 import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
-
-current_time_ms = lambda: int(round(time.time() * 1000))
+from .TimeInfo import TimeInfo
 
 def parse_agent_kwargs_from_file(config_filename):
     """ Parses a config file and returns a dictionary with the parsed agent settings
@@ -116,12 +114,6 @@ class SoarAgent():
         self.kernel = sml.Kernel.CreateKernelInNewThread()
         self.kernel.SetAutoCommit(False)
 
-        self.start_time = current_time_ms()
-        self.time_id = None
-
-        self.time_info = [8, 0, 0, 0, 0, 0] # [ hour, min, sec, tot-sec, real-world-sec, # steps (dc's)]
-        self.time_wmes = [ SoarWME("clock-hour", 8), SoarWME("clock-min", 0), SoarWME("clock-sec", 0), SoarWME("total-secs", 0), SoarWME("seconds", 0), SoarWME("steps", 0) ]
-
         if self.enable_log:
             self.log_writer = open("agent-log.txt", 'w')
 
@@ -129,6 +121,8 @@ class SoarAgent():
         self.print_event_callback_id = -1
         self.init_agent_callback_id = -1
         self.connectors = {}
+
+        self.time_info = TimeInfo()
 
         self._create_soar_agent()
 
@@ -245,13 +239,9 @@ class SoarAgent():
     def _on_init_soar(self):
         for connector in self.connectors.values():
             connector.on_init_soar()
-        self.start_time = current_time_ms()
-        self.time_info = [8, 0, 0, 0, 0, 0]
-        for wme in self.time_wmes:
-            wme.remove_from_wm()
-        if self.time_id:
-            self.time_id.DestroyWME()
-            self.time_id = None
+
+        self.time_info.remove_from_wm()
+        self.time_info.reset_time()
 
     def _destroy_soar_agent(self):
         self.stop()
@@ -274,44 +264,20 @@ class SoarAgent():
     @staticmethod
     def _run_event_handler(eventID, self, agent, phase):
         if eventID == sml.smlEVENT_BEFORE_INPUT_PHASE:
-            self._on_input_phase()
+            self._on_input_phase(agent.GetInputLink())
 
 
-    def _on_input_phase(self):
+    def _on_input_phase(self, input_link):
        try:
             if self.queue_stop:
                 self.agent.StopSelf()
                 self.queue_stop = False
 
-            # Update time information
-            self.time_info[2] += 5
-            if self.time_info[2] >= 60:
-                self.time_info[2] -= 60
-                self.time_info[1] += 1
-                if self.time_info[1] >= 60:
-                    self.time_info[1] -= 60
-                    self.time_info[0] += 1
-                    if self.time_info[0] >= 24:
-                        self.time_info[0] -= 24
-            self.time_info[3] += 5
-            self.time_info[4] = int((current_time_ms() - self.start_time)/1000)
-            self.time_info[5] += 1
-
-            for i, val in enumerate(self.time_info):
-                self.time_wmes[i].set_value(val)
-
-            # Update time wmes
-            if self.time_id == None:
-                self.time_id = self.agent.GetInputLink().CreateIdWME("time")
-                for wme in self.time_wmes:
-                    wme.add_to_wm(self.time_id)
-            else:
-                for wme in self.time_wmes:
-                    wme.update_wm()
-
+            self.time_info.tick(5)
+            self.time_info.update_wm(input_link)
 
             for connector in self.connectors.values():
-                connector.on_input_phase(self.agent.GetInputLink())
+                connector.on_input_phase(input_link)
 
             if self.agent.IsCommitRequired():
                 self.agent.Commit()
