@@ -31,9 +31,9 @@ class SVSCommands:
         return "0.5 0.5 0.5 0.5 0.5 -0.5 0.5 -0.5 0.5 0.5 -0.5 -0.5 -0.5 0.5 0.5 -0.5 0.5 -0.5 -0.5 -0.5 0.5 -0.5 -0.5 -0.5"
     
     @staticmethod
-    def add_box(obj_id, pos=None, rot=None, scl=None):
+    def add_box(obj_id, pos=None, rot=None, scl=None, parent="world"):
         """ Returns an SVS command for adding a bounding box object to the scene """
-        cmd = "add {:s} world v {:s}".format(obj_id, SVSCommands.bbox_verts())
+        cmd = "add {:s} {:s} v {:s}".format(obj_id, parent, SVSCommands.bbox_verts())
         if pos: cmd += " p {:s}".format(SVSCommands.pos_to_str(pos))
         if rot: cmd += " r {:s}".format(SVSCommands.rot_to_str(rot))
         if scl: cmd += " s {:s}".format(SVSCommands.scl_to_str(scl))

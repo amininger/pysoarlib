@@ -14,7 +14,7 @@ Note that LanguageConnector is used in Rosie and not all that useful for general
 """
 import Python_sml_ClientInterface as sml
 
-__all__ = ["WMInterface", "SoarWME", "SVSCommands", "AgentConnector", "LanguageConnector", "SoarAgent"]
+__all__ = ["WMInterface", "SoarWME", "SoarUtils", "SVSCommands", "AgentConnector", "LanguageConnector", "SoarAgent"]
 
 # Extend the sml Identifier class definition with additional utility methods
 from .IdentifierExtensions import *
@@ -32,4 +32,6 @@ from .SVSCommands import SVSCommands
 from .AgentConnector import AgentConnector
 from .LanguageConnector import LanguageConnector
 from .SoarAgent import SoarAgent
+from .SoarUtils import SoarUtils
+
 

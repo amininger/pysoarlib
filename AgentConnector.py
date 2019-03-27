@@ -90,5 +90,3 @@ class AgentConnector(object):
             self.print_handler("ERROR IN OUTPUT EVENT HANDLER")
             self.print_handler(traceback.format_exc())
             self.print_handler("--------- END ---------------")
-
-        self.connected = True

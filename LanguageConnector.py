@@ -112,7 +112,7 @@ class LanguageConnector(AgentConnector):
             self.process_output_link_message(root_id)
 
     def process_output_link_message(self, root_id):
-        message_type = root_id.GetChildString("type");
+        message_type = root_id.FindByAttribute("type", 0).GetValueAsString()
         if not message_type:
             root_id.CreateStringWME("status", "error")
             root_id.CreateStringWME("error-info", "send-message has no type")
