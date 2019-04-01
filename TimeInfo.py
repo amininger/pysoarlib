@@ -64,6 +64,8 @@ class TimeInfo(WMInterface):
     def _remove_from_wm_impl(self):
         for wme in self.clock_wmes:
             wme.remove_from_wm()
+        self.seconds.remove_from_wm()
+        self.steps.remove_from_wm()
         self.time_id.DestroyWME()
         self.time_id = None
         self.clock_id = None
