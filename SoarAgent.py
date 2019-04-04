@@ -1,7 +1,7 @@
 from __future__ import print_function
 
-import sys
 from threading import Thread
+import traceback
 
 import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
@@ -260,6 +260,7 @@ class SoarAgent():
             self._on_init_soar()
         except:
             self.print_handler("ERROR IN INIT AGENT")
+            self.print_handler(traceback.format_exc())
 
     @staticmethod
     def _run_event_handler(eventID, self, agent, phase):
@@ -282,11 +283,8 @@ class SoarAgent():
             if self.agent.IsCommitRequired():
                 self.agent.Commit()
        except:
-           e = sys.exc_info()
            self.print_handler("ERROR IN RUN HANDLER")
-           self.print_handler(str(e[0]))
-           self.print_handler(str(e[1]))
-           self.print_handler(str(e[2]))
+           self.print_handler(traceback.format_exc())
 
 
     @staticmethod
@@ -299,5 +297,6 @@ class SoarAgent():
                 self.log_writer.write(message)
         except:
             self.print_handler("ERROR IN PRINT HANDLER")
+            self.print_handler(traceback.format_exc())
 
 

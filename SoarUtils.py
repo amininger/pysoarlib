@@ -52,4 +52,4 @@ class SoarUtils:
             else:
                 wme.remove_from_wm()
         for path in items_to_remove:
-            wme_table.remove(path)
+            del wme_table[path]
