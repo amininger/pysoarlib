@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from threading import Thread
 import traceback
+from time import sleep
 
 import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
@@ -246,7 +247,7 @@ class SoarAgent():
     def _destroy_soar_agent(self):
         self.stop()
         while self.is_running:
-            time.sleep(0.01)
+            sleep(0.01)
         self._on_init_soar()
         self.disconnect()
         if self.spawn_debugger:
