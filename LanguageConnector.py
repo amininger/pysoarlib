@@ -128,6 +128,9 @@ class LanguageConnector(AgentConnector):
         message = LanguageConnector.simple_messages.get(message_type);
         if message:
             return message
+        fields = root_id.FindByAttribute("fields", 0).ConvertToIdentifier()
+        if message_type == "single-word-message":
+            return fields.FindByAttribute("word", 0).GetValueAsString()
         return message_type
 
     simple_messages = {

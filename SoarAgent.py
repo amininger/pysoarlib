@@ -37,6 +37,7 @@ def parse_agent_kwargs_from_file(config_filename):
     kwargs["spawn_debugger"] = props.get("spawn_debugger", "false").lower() == "true"
     kwargs["write_to_stdout"] = props.get("write_to_stdout", "false").lower() == "true"
     kwargs["enable_log"] = props.get("enable_log", "false").lower() == "true"
+    kwargs["log_filename"] = props.get("log_filename", "agent-log.txt")
 
     for prop in props:
         if prop not in kwargs:
@@ -80,6 +81,9 @@ class SoarAgent():
 
         enable_log = true|false
             If true, will write all soar output to a file called agent-log.txt
+
+        log_filename = [filename]
+            Specify the name of the log file to write
         
         Note: Still need to call connect() to register event handlers
         """
@@ -101,6 +105,7 @@ class SoarAgent():
         self.spawn_debugger = kwargs.get("spawn_debugger", False)
         self.write_to_stdout = kwargs.get("write_to_stdout", False)
         self.enable_log = kwargs.get("enable_log", False)
+        self.log_filename = kwargs.get("log_filename", "agent-log.txt")
 
         self.messages_file = kwargs.get("messages_file", None)
 
@@ -116,7 +121,7 @@ class SoarAgent():
         self.kernel.SetAutoCommit(False)
 
         if self.enable_log:
-            self.log_writer = open("agent-log.txt", 'w')
+            self.log_writer = open(self.log_filename, 'w')
 
         self.run_event_callback_id = -1
         self.print_event_callback_id = -1
