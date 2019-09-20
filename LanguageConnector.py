@@ -142,7 +142,7 @@ class LanguageConnector(AgentConnector):
         "no-proposed-action": "I couldn't do that",
         "missing-argument": "I need more information to do that action",
         "learn-location-failure": "I don't know where I am.",
-        "get-goal-info": "What is the goal?",
+        "get-next-goal": "What is the next goal or subtask?",
         "no-action-context-for-goal": "I don't know what action that goal is for",
         "get-next-task": "I'm ready for a new task",
         "get-next-subaction": "What do I do next?",
