@@ -54,6 +54,9 @@ class SoarWME(WMInterface):
         if self.val != newval:
             self.val = newval
             self.changed = True
+    
+    def __str__(self):
+        return str(self.val)
 
 
     ### Internal Methods

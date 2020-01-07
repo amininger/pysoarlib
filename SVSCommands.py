@@ -29,6 +29,15 @@ class SVSCommands:
         It is of unit size centered at the origin
         """
         return "0.5 0.5 0.5 0.5 0.5 -0.5 0.5 -0.5 0.5 0.5 -0.5 -0.5 -0.5 0.5 0.5 -0.5 0.5 -0.5 -0.5 -0.5 0.5 -0.5 -0.5 -0.5"
+
+    @staticmethod
+    def add_node(node_id, pos=None, rot=None, scl=None, parent="world"):
+        """ Returns an SVS command for adding a graph node to the scene (no geometry) """
+        cmd = "add {:s} {:s} ".format(node_id, parent)
+        if pos: cmd += " p {:s}".format(SVSCommands.pos_to_str(pos))
+        if rot: cmd += " r {:s}".format(SVSCommands.rot_to_str(rot))
+        if scl: cmd += " s {:s}".format(SVSCommands.scl_to_str(scl))
+        return cmd
     
     @staticmethod
     def add_box(obj_id, pos=None, rot=None, scl=None, parent="world"):

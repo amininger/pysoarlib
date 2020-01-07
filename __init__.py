@@ -25,7 +25,6 @@ sml.Identifier.GetChildId = get_child_id
 sml.Identifier.GetAllChildIds = get_all_child_ids
 sml.Identifier.GetAllChildValues = get_all_child_values
 
-
 from .WMInterface import WMInterface
 from .SoarWME import SoarWME
 from .SVSCommands import SVSCommands
