@@ -102,14 +102,11 @@ class SoarAgent():
         if print_handler == None:
             self.print_handler = print
 
-        self.settings = kwargs
-        self._parse_config_file(config_filename, kwargs.keys())
+        self.config_filename = config_filename
 
-        if 'source_config' in self.settings and self.settings["reconfig_on_launch"]:
-            # Rerun the configuration tool and re-source the config file
-            self.print_handler("RUNNING CONFIGURATOR: " + self.settings['source_config'])
-            subprocess.check_output(['java', 'edu.umich.rosie.tools.config.RosieAgentConfigurator', kwargs['source_config']])
-            self._parse_config_file(config_filename, kwargs.keys())
+        self.settings = kwargs
+        self.overridden_settings = kwargs.keys()
+        self._parse_config_file()
 
         self.agent_name = kwargs.get("agent_name", "soaragent")
         self.agent_source = kwargs.get("agent_source", None)
@@ -228,13 +225,13 @@ class SoarAgent():
 
 #### Internal Methods
 
-    def _parse_config_file(self, config_filename, settings_to_ignore):
-        """ Parses the given rosie config file and adds everything in self.settings unless in the given ignore list """
-        if config_filename is not None:
+    def _parse_config_file(self):
+        """ Parses the rosie config file and adds everything in self.settings unless in the overriden list """
+        if self.config_filename is not None:
             # Add settings from config file if not overridden in kwargs
-            config_settings = parse_agent_settings_from_file(config_filename)
+            config_settings = parse_agent_settings_from_file(self.config_filename)
             for key, value in config_settings.items():
-                if key not in settings_to_ignore:
+                if key not in self.overridden_settings:
                     self.settings[key] = value
 
 
@@ -243,6 +240,12 @@ class SoarAgent():
         self.is_running = False
 
     def _create_soar_agent(self):
+        if self.settings['source_config'] is not None and self.settings["reconfig_on_launch"]:
+            # Rerun the configuration tool and re-source the config file
+            self.print_handler("RUNNING CONFIGURATOR: " + self.settings['source_config'])
+            subprocess.check_output(['java', 'edu.umich.rosie.tools.config.RosieAgentConfigurator', self.settings['source_config']])
+            self._parse_config_file()
+
         self.agent = self.kernel.CreateAgent(self.agent_name)
         if self.spawn_debugger:
             success = self.agent.SpawnDebugger(self.kernel.GetListenerPort())
