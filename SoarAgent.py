@@ -4,11 +4,13 @@ from threading import Thread
 import traceback
 from time import sleep
 
+import subprocess
+
 import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
 from .TimeInfo import TimeInfo
 
-def parse_agent_kwargs_from_file(config_filename):
+def parse_agent_settings_from_file(config_filename):
     """ Parses a config file and returns a dictionary with the parsed agent settings
 
     Will throw an error if the file doesn't exist
@@ -25,25 +27,27 @@ def parse_agent_kwargs_from_file(config_filename):
                 props[args[0].replace("-", "_")] = args[2]
 
     # Set config values
-    kwargs = {}
-    kwargs["agent_name"] = props.get("agent_name", "soaragent")
-    kwargs["agent_source"] = props.get("agent_source", None)
-    kwargs["smem_source"] = props.get("smem_source", None)
+    settings = {}
+    settings["source_config"] = props.get("source_config", None)
+    settings["agent_name"] = props.get("agent_name", "soaragent")
+    settings["agent_source"] = props.get("agent_source", None)
+    settings["smem_source"] = props.get("smem_source", None)
 
-    kwargs["messages_file"] = props.get("messages_file", None)
+    settings["messages_file"] = props.get("messages_file", None)
 
-    kwargs["verbose"] = props.get("verbose", "false").lower() == "true"
-    kwargs["watch_level"] = int(props.get("watch_level", "1"))
-    kwargs["spawn_debugger"] = props.get("spawn_debugger", "false").lower() == "true"
-    kwargs["write_to_stdout"] = props.get("write_to_stdout", "false").lower() == "true"
-    kwargs["enable_log"] = props.get("enable_log", "false").lower() == "true"
-    kwargs["log_filename"] = props.get("log_filename", "agent-log.txt")
+    settings["verbose"] = props.get("verbose", "false").lower() == "true"
+    settings["watch_level"] = int(props.get("watch_level", "1"))
+    settings["spawn_debugger"] = props.get("spawn_debugger", "false").lower() == "true"
+    settings["write_to_stdout"] = props.get("write_to_stdout", "false").lower() == "true"
+    settings["enable_log"] = props.get("enable_log", "false").lower() == "true"
+    settings["log_filename"] = props.get("log_filename", "agent-log.txt")
+    settings["reconfig_on_launch"] = props.get("reconfig_on_launch", "false").lower() == "true"
 
     for prop in props:
-        if prop not in kwargs:
-            kwargs[prop] = props[prop]
+        if prop not in settings:
+            settings[prop] = props[prop]
 
-    return kwargs
+    return settings
 
 class SoarAgent():
     """ A wrapper class for creating and using a soar SML Agent """
@@ -57,6 +61,12 @@ class SoarAgent():
                 e.g. agent-name = Rosie
 
         ============== kwargs =============
+
+        source_config = [string]
+            The file used to configure this agent (Rosie-specific configuration)
+
+        reconfig_on_launch = true|false (default=false)
+            If true, the agent will use the Rosie java configuration tool to re-generate the agent before continuing
 
         agent_name = [string] (default=soaragent)
             Name to give the SML Agent when it is created
@@ -88,14 +98,19 @@ class SoarAgent():
         Note: Still need to call connect() to register event handlers
         """
 
-        if config_filename:
-            # Add settings from config file if not overridden in kwargs
-            config_kwargs = parse_agent_kwargs_from_file(config_filename)
-            for key, value in config_kwargs.items():
-                if key not in kwargs:
-                    kwargs[key] = value
+        self.print_handler = print_handler
+        if print_handler == None:
+            self.print_handler = print
 
         self.settings = kwargs
+        self._parse_config_file(config_filename, kwargs.keys())
+
+        if 'source_config' in self.settings and self.settings["reconfig_on_launch"]:
+            # Rerun the configuration tool and re-source the config file
+            self.print_handler("RUNNING CONFIGURATOR: " + self.settings['source_config'])
+            subprocess.check_output(['java', 'edu.umich.rosie.tools.config.RosieAgentConfigurator', kwargs['source_config']])
+            self._parse_config_file(config_filename, kwargs.keys())
+
         self.agent_name = kwargs.get("agent_name", "soaragent")
         self.agent_source = kwargs.get("agent_source", None)
         self.smem_source = kwargs.get("smem_source", None)
@@ -112,10 +127,7 @@ class SoarAgent():
         self.connected = False
         self.is_running = False
         self.queue_stop = False
-
-        self.print_handler = print_handler
-        if print_handler == None:
-            self.print_handler = print
+        self.dc_sleep = 0.0
 
         self.kernel = sml.Kernel.CreateKernelInNewThread()
         self.kernel.SetAutoCommit(False)
@@ -155,6 +167,10 @@ class SoarAgent():
         """ Execute a soar command, write output to print_handler """
         self.print_handler(cmd)
         self.print_handler(self.agent.ExecuteCommandLine(cmd).strip())
+
+    def get_command_result(self, cmd):
+        """ Execute a soar command, then result the result as a string """
+        return self.agent.ExecuteCommandLine(cmd)
 
     def connect(self):
         """ Register event handlers for agent and connectors """
@@ -211,6 +227,16 @@ class SoarAgent():
 
 
 #### Internal Methods
+
+    def _parse_config_file(self, config_filename, settings_to_ignore):
+        """ Parses the given rosie config file and adds everything in self.settings unless in the given ignore list """
+        if config_filename is not None:
+            # Add settings from config file if not overridden in kwargs
+            config_settings = parse_agent_settings_from_file(config_filename)
+            for key, value in config_settings.items():
+                if key not in settings_to_ignore:
+                    self.settings[key] = value
+
 
     def _run_thread(self):
         self.agent.ExecuteCommandLine("run")
@@ -275,7 +301,9 @@ class SoarAgent():
 
 
     def _on_input_phase(self, input_link):
-       try:
+        if self.dc_sleep > 0:
+            sleep(self.dc_sleep)
+        try:
             if self.queue_stop:
                 self.agent.StopSelf()
                 self.queue_stop = False
@@ -288,9 +316,9 @@ class SoarAgent():
 
             if self.agent.IsCommitRequired():
                 self.agent.Commit()
-       except:
-           self.print_handler("ERROR IN RUN HANDLER")
-           self.print_handler(traceback.format_exc())
+        except:
+            self.print_handler("ERROR IN RUN HANDLER")
+            self.print_handler(traceback.format_exc())
 
 
     @staticmethod
