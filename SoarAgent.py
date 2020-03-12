@@ -10,44 +10,31 @@ import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
 from .TimeInfo import TimeInfo
 
-def parse_agent_settings_from_file(config_filename):
-    """ Parses a config file and returns a dictionary with the parsed agent settings
-
-    Will throw an error if the file doesn't exist
-    Config file is a text file with lines of the form 'setting = value'
-    It uses the same setting names as above, but with - intead of _
-        e.g. agent-name = Rosie
-    """
-    # Read config file
-    props = {}
-    with open(config_filename, 'r') as fin:
-        for line in fin:
-            args = line.split()
-            if len(args) == 3 and args[1] == '=':
-                props[args[0].replace("-", "_")] = args[2]
-
+def parse_settings(**kwargs):
     # Set config values
     settings = {}
-    settings["source_config"] = props.get("source_config", None)
-    settings["agent_name"] = props.get("agent_name", "soaragent")
-    settings["agent_source"] = props.get("agent_source", None)
-    settings["smem_source"] = props.get("smem_source", None)
+    settings["source_config"] = kwargs.get("source_config", None)
+    settings["agent_name"] = kwargs.get("agent_name", "soaragent")
+    settings["agent_source"] = kwargs.get("agent_source", None)
+    settings["smem_source"] = kwargs.get("smem_source", None)
 
-    settings["messages_file"] = props.get("messages_file", None)
+    settings["messages_file"] = kwargs.get("messages_file", None)
 
-    settings["verbose"] = props.get("verbose", "false").lower() == "true"
-    settings["watch_level"] = int(props.get("watch_level", "1"))
-    settings["spawn_debugger"] = props.get("spawn_debugger", "false").lower() == "true"
-    settings["write_to_stdout"] = props.get("write_to_stdout", "false").lower() == "true"
-    settings["enable_log"] = props.get("enable_log", "false").lower() == "true"
-    settings["log_filename"] = props.get("log_filename", "agent-log.txt")
-    settings["reconfig_on_launch"] = props.get("reconfig_on_launch", "false").lower() == "true"
+    settings["verbose"] = kwargs.get("verbose", "false").lower() == "true"
+    settings["watch_level"] = int(kwargs.get("watch_level", "1"))
+    settings["spawn_debugger"] = kwargs.get("spawn_debugger", "false").lower() == "true"
+    settings["write_to_stdout"] = kwargs.get("write_to_stdout", "false").lower() == "true"
+    settings["enable_log"] = kwargs.get("enable_log", "false").lower() == "true"
+    settings["log_filename"] = kwargs.get("log_filename", "agent-log.txt")
+    settings["reconfig_on_launch"] = kwargs.get("reconfig_on_launch", "false").lower() == "true"
 
-    for prop in props:
-        if prop not in settings:
-            settings[prop] = props[prop]
+    for arg in kwargs:
+        if arg not in settings:
+            settings[arg] = kwargs[arg]
 
     return settings
+
+
 
 class SoarAgent():
     """ A wrapper class for creating and using a soar SML Agent """
@@ -104,22 +91,22 @@ class SoarAgent():
 
         self.config_filename = config_filename
 
-        self.settings = kwargs
-        self.overridden_settings = kwargs.keys()
-        self._parse_config_file()
+        self._configure_settings(**kwargs)
 
-        self.agent_name = kwargs.get("agent_name", "soaragent")
-        self.agent_source = kwargs.get("agent_source", None)
-        self.smem_source = kwargs.get("smem_source", None)
+        self.source_config = self.settings.get("source_config", None)
+        self.agent_name = self.settings.get("agent_name", "soaragent")
+        self.agent_source = self.settings.get("agent_source", None)
+        self.smem_source = self.settings.get("smem_source", None)
 
-        self.verbose = kwargs.get("verbose", False)
-        self.watch_level = kwargs.get("watch_level", 1)
-        self.spawn_debugger = kwargs.get("spawn_debugger", False)
-        self.write_to_stdout = kwargs.get("write_to_stdout", False)
-        self.enable_log = kwargs.get("enable_log", False)
-        self.log_filename = kwargs.get("log_filename", "agent-log.txt")
+        self.verbose = self.settings.get("verbose", False)
+        self.watch_level = self.settings.get("watch_level", 1)
+        self.spawn_debugger = self.settings.get("spawn_debugger", False)
+        self.write_to_stdout = self.settings.get("write_to_stdout", False)
+        self.enable_log = self.settings.get("enable_log", False)
+        self.log_filename = self.settings.get("log_filename", "agent-log.txt")
 
-        self.messages_file = kwargs.get("messages_file", None)
+        self.messages_file = self.settings.get("messages_file", None)
+        self.reconfig_on_launch = self.settings.get("reconfig_on_launch", False)
 
         self.connected = False
         self.is_running = False
@@ -224,14 +211,31 @@ class SoarAgent():
 
 
 #### Internal Methods
-
     def _parse_config_file(self):
-        """ Parses the rosie config file and adds everything in self.settings unless in the overriden list """
+        """ Parses a config file and returns a dictionary with the parsed agent settings
+
+        Will throw an error if the file doesn't exist
+        Config file is a text file with lines of the form 'setting = value'
+        It uses the same setting names as above, but with - intead of _
+            e.g. agent-name = Rosie
+        """
+        settings = {}
+        with open(self.config_filename, 'r') as fin:
+            for line in fin:
+                args = line.split()
+                if len(args) == 3 and args[1] == '=':
+                    settings[args[0].replace("-", "_")] = args[2]
+        return settings
+
+    def _configure_settings(self, **kwargs):
+        # Parse the given kwargs 
+        self.settings = kwargs
+        # Add any settings in the config file (if it exists)
         if self.config_filename is not None:
-            # Add settings from config file if not overridden in kwargs
-            config_settings = parse_agent_settings_from_file(self.config_filename)
+            config_settings = self._parse_config_file()
             for key, value in config_settings.items():
-                if key not in self.overridden_settings:
+                # Add settings from config file if not overridden in kwargs
+                if key not in kwargs:
                     self.settings[key] = value
 
 
@@ -240,11 +244,10 @@ class SoarAgent():
         self.is_running = False
 
     def _create_soar_agent(self):
-        if self.settings['source_config'] is not None and self.settings["reconfig_on_launch"]:
+        if self.source_config is not None and self.reconfig_on_launch:
             # Rerun the configuration tool and re-source the config file
-            self.print_handler("RUNNING CONFIGURATOR: " + self.settings['source_config'])
-            subprocess.check_output(['java', 'edu.umich.rosie.tools.config.RosieAgentConfigurator', self.settings['source_config']])
-            self._parse_config_file()
+            self.print_handler("RUNNING CONFIGURATOR: " + self.source_config)
+            subprocess.check_output(['java', 'edu.umich.rosie.tools.config.RosieAgentConfigurator', self.source_config])
 
         self.agent = self.kernel.CreateAgent(self.agent_name)
         if self.spawn_debugger:

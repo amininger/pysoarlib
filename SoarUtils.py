@@ -53,3 +53,166 @@ class SoarUtils:
                 wme.remove_from_wm()
         for path in items_to_remove:
             del wme_table[path]
+
+
+    def extract_wm_graph(root_id, max_depth=1000000, id_map=None):
+        """
+        Given a soar identifier (root_id), crawls over the children and builds a graph rep for them
+
+        Return dictionary:
+            d['__root__'] = root_id as a string
+            d['attr'] = constant # for string, double, or int value
+            d['attr'] = dict # for identifier
+            d['attr'] = [ val1, val2, ... ] # for multi-valued attributes
+
+        This will handle loops, where the same dict will be reused for each reference to an identifier
+
+        Example:
+
+        Given an identifier <obj> with the following wm structure:
+        (<obj> ^id 5 ^volume 23.3 ^predicates <preds>)
+           (<preds> ^predicate red ^predicate cube ^predicate block)
+
+        Will return the following dictionary:
+        { 
+            '__root__': O32 (identifier for <obj>)
+            'id' : 5 (int),
+            'volume': 23.3 (float),
+            'predicates': {
+                '__root__': P53 (identifier for <preds>)
+                'predicate': [ 'red', 'cube', 'block' ]
+            }
+        }
+
+        :param root_id: The sml identifier of the root of the sub-graph
+        :param max_depth: The maximum depth to extract
+        :param id_map: A dictionary from identifiers to their corresponding dictionaries
+        :return a dict containing a recurisve enumeration of all children reachable from the given root_id
+        """
+
+        if id_map is None:
+            id_map = dict()
+        root_id_str = root_id.GetValueAsString()
+        if root_id_str in id_map:
+            return id_map[root_id_str]
+
+        child_wmes = dict()
+        child_wmes['__root__'] = root_id_str
+        id_map[root_id_str] = child_wmes
+
+        if max_depth == 0:
+            return child_wmes
+
+        for index in range(root_id.GetNumberChildren()):
+            wme = root_id.GetChild(index)
+            attr = wme.GetAttribute()
+            if wme.IsIdentifier():
+                wme_val = SoarUtils.extract_wm_graph(wme.ConvertToIdentifier(), max_depth-1, id_map)
+            elif wme.GetValueType() == "int":
+                wme_val = wme.ConvertToIntElement().GetValue()
+            elif wme.GetValueType() == "double":
+                wme_val = wme.ConvertToFloatElement().GetValue()
+            else:
+                wme_val = wme.GetValueAsString()
+            if attr in child_wmes:
+                cur_val = child_wmes[attr]
+                if isinstance(cur_val, list):
+                    cur_val.append(wme_val)
+                else:
+                    child_wmes[attr] = [ cur_val, wme_val ]
+            else:
+                child_wmes[attr] = wme_val
+
+        return child_wmes
+
+    def print_wm_graph(wm_graph):
+        """
+        Given a wm_graph produced by extract_wm_graph, prints it in a pretty format
+
+        :param wm_graph: A dictionary representing a wm graph produced by extract_wm_graph
+        """
+        print(SoarUtils._wm_value_to_str(wm_graph, "", set()))
+
+                    
+    def _print_wm_graph(wm_graph, indent=0, ignore_ids=None):
+        """
+        internal recursive version of print_wm_graph with indent and ignore_ids specified
+        Given a wm_graph produced by extract_wm_graph, prints it in a pretty format
+
+        :param wm_graph: A dictionary representing a wm graph produced by extract_wm_graph
+        :param indent: Number of spaces to indent the current level
+        :param ignore_ids: A set of Identifiers to not print
+        """
+        if ignore_ids is None:
+            ignore_ids = set()
+
+        prefix = " " * indent
+
+        root_id = wm_graph['__root__']
+        if root_id in ignore_ids:
+            return
+        ignore_ids.add(root_id)
+
+        for attr, val in wm_graph.items():
+            if attr == '__root__':
+                continue
+            if isinstance(val, list):
+                # Print a multi-valued attribute
+                print(prefix + attr + ": [")
+                for v in val:
+                    if isinstance(v, dict):
+                        if len(val) == 1:
+                            print(prefix + val['__root__'] + "{ }")
+                        print(prefix + "  {")
+                        SoarUtils._print_wm_graph(v, indent+4, ignore_ids)
+                        print(prefix + "  }")
+                    else:
+                        print(prefix + "  " + str(v))
+                print(prefix + "]")
+            elif isinstance(val, dict):
+                # Print a child identifier recursively
+                if len(val) == 1:
+                    print(prefix + attr + ": " + val['__root__'] + "{ }")
+                else:
+                    print(prefix + attr + ": " + val['__root__'] + " {")
+                    SoarUtils._print_wm_graph(val, indent + 2, ignore_ids)
+                    print(prefix + "}")
+            else:
+                print(prefix + attr + ": " + str(val))
+
+    def _wm_value_to_str(val, indent, ignore_ids):
+        if isinstance(val, str):
+            return val
+        if isinstance(val, int):
+            return str(val)
+        if isinstance(val, float):
+            return str(val)
+        if isinstance(val, list):
+            return "[ " + ", ".join(SoarUtils._wm_value_to_str(i, indent, ignore_ids) for i in val) + " ]"
+        if not isinstance(val, dict):
+            return ""
+        id_str = val['__root__']
+        if id_str in ignore_ids:
+            return "<" + id_str + ">"
+        ignore_ids.add(id_str)
+        if len(val) == 1:
+            return "<" + id_str + ">"
+        s = "<" + id_str + "> {\n"
+        for a, v in val.items():
+            if a == '__root__':
+                continue
+            s += indent + "  " + a + ": " + SoarUtils._wm_value_to_str(v, indent + "  ", ignore_ids) + "\n"
+        s += indent + "}"
+        return s
+
+
+
+
+
+
+
+
+        
+
+
+
