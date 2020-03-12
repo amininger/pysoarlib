@@ -125,62 +125,23 @@ class SoarUtils:
 
         return child_wmes
 
-    def print_wm_graph(wm_graph):
+    def wm_graph_to_str(wm_graph):
         """
-        Given a wm_graph produced by extract_wm_graph, prints it in a pretty format
+        Given a wm_graph produced by extract_wm_graph, returns a nicely formatted string representation of it
 
         :param wm_graph: A dictionary representing a wm graph produced by extract_wm_graph
         """
-        print(SoarUtils._wm_value_to_str(wm_graph, "", set()))
-
-                    
-    def _print_wm_graph(wm_graph, indent=0, ignore_ids=None):
-        """
-        internal recursive version of print_wm_graph with indent and ignore_ids specified
-        Given a wm_graph produced by extract_wm_graph, prints it in a pretty format
-
-        :param wm_graph: A dictionary representing a wm graph produced by extract_wm_graph
-        :param indent: Number of spaces to indent the current level
-        :param ignore_ids: A set of Identifiers to not print
-        """
-        if ignore_ids is None:
-            ignore_ids = set()
-
-        prefix = " " * indent
-
-        root_id = wm_graph['__root__']
-        if root_id in ignore_ids:
-            return
-        ignore_ids.add(root_id)
-
-        for attr, val in wm_graph.items():
-            if attr == '__root__':
-                continue
-            if isinstance(val, list):
-                # Print a multi-valued attribute
-                print(prefix + attr + ": [")
-                for v in val:
-                    if isinstance(v, dict):
-                        if len(val) == 1:
-                            print(prefix + val['__root__'] + "{ }")
-                        print(prefix + "  {")
-                        SoarUtils._print_wm_graph(v, indent+4, ignore_ids)
-                        print(prefix + "  }")
-                    else:
-                        print(prefix + "  " + str(v))
-                print(prefix + "]")
-            elif isinstance(val, dict):
-                # Print a child identifier recursively
-                if len(val) == 1:
-                    print(prefix + attr + ": " + val['__root__'] + "{ }")
-                else:
-                    print(prefix + attr + ": " + val['__root__'] + " {")
-                    SoarUtils._print_wm_graph(val, indent + 2, ignore_ids)
-                    print(prefix + "}")
-            else:
-                print(prefix + attr + ": " + str(val))
+        return SoarUtils._wm_value_to_str(wm_graph, "", set())
 
     def _wm_value_to_str(val, indent, ignore_ids):
+        """
+        recursive helper function which returns a string representation of any given value type
+        (str, int, float, list, dict)
+
+        :param wm_graph: A dictionary representing a wm graph produced by extract_wm_graph
+        :param indent: a string of spaces to indent the current level
+        :param ignore_ids: A set of Identifiers to not print
+        """
         if isinstance(val, str):
             return val
         if isinstance(val, int):
