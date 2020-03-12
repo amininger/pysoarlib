@@ -8,6 +8,7 @@ import sys
 from string import digits
 from .WMInterface import WMInterface
 from .AgentConnector import AgentConnector
+from .SoarUtils import SoarUtils
 
 class Message(WMInterface):
     """ Represents a single sentence that can be added to working memory as a linked list """
@@ -125,54 +126,59 @@ class LanguageConnector(AgentConnector):
         root_id.CreateStringWME("status", "complete")
 
     def translate_agent_message(self, root_id, message_type):
-        message = LanguageConnector.simple_messages.get(message_type);
-        if message:
-            return message
-        fields = root_id.FindByAttribute("fields", 0).ConvertToIdentifier()
-        if message_type == "single-word-message":
-            return fields.FindByAttribute("word", 0).GetValueAsString()
+        msg_graph = SoarUtils.extract_wm_graph(root_id)
+        message_parser = LanguageConnector.message_parser_map.get(message_type)
+        if message_parser is not None and callable(message_parser):
+            return message_parser(msg_graph)
         return message_type
 
-    simple_messages = {
-        "ok": "Ok",
-        "unable-to-satisfy": "I couldn't do that",
-        "unable-to-interpret-message": "I don't understand.",
-        "missing-object": "I lost the object I was using. Can you help me find it?",
-        "index-object-failure": "I couldn't find the referenced object",
-        "no-proposed-action": "I couldn't do that",
-        "missing-argument": "I need more information to do that action",
-        "learn-location-failure": "I don't know where I am.",
-        "get-next-goal": "What is the next goal or subtask?",
-        "no-action-context-for-goal": "I don't know what action that goal is for",
-        "get-next-task": "I'm ready for a new task",
-        "get-next-subaction": "What do I do next?",
-        "confirm-pick-up": "I have picked up the object.",
-        "confirm-put-down": "I have put down the object.",
-        "stop-leading": "You can stop following me",
-        "retrospective-learning-failure": "I was unable to learn the task policy",
+    message_parser_map = {
+        "ok": lambda msg_graph: "Ok",
+        "unable-to-satisfy": lambda msg_graph: "I couldn't do that",
+        "unable-to-interpret-message": lambda msg_graph: "I don't understand.",
+        "missing-object": lambda msg_graph: "I lost the object I was using. Can you help me find it?",
+        "index-object-failure": lambda msg_graph: "I couldn't find the referenced object",
+        "no-proposed-action": lambda msg_graph: "I couldn't do that",
+        "missing-argument": lambda msg_graph: "I need more information to do that action",
+        "learn-location-failure": lambda msg_graph: "I don't know where I am.",
+        "get-next-goal": lambda msg_graph: "What is the next goal or subtask?",
+        "no-action-context-for-goal": lambda msg_graph: "I don't know what action that goal is for",
+        "get-next-task": lambda msg_graph: "I'm ready for a new task",
+        "get-next-subaction": lambda msg_graph: "What do I do next?",
+        "confirm-pick-up": lambda msg_graph: "I have picked up the object.",
+        "confirm-put-down": lambda msg_graph: "I have put down the object.",
+        "stop-leading": lambda msg_graph: "You can stop following me",
+        "retrospective-learning-failure": lambda msg_graph: "I was unable to learn the task policy",
+        "report-successful-training": lambda msg_graph: "Ok",
         
         #added for games and puzzles
-        "your-turn": "Your turn.",
-        "i-win": "I win!",
-        "i-lose": "I lose.",
-        "easy": "That was easy!",
-        "describe-game": "Please setup the game.",
-        "describe-puzzle": "Please setup the puzzle.",
-        "setup-goal": "Please setup the goal state.",
-        "tell-me-go": "Ok: tell me when to go.",
-        "setup-failure": "Please setup the failure condition.",
-        "define-actions": "Can you describe the legal actions?",
-        "describe-action": "What are the conditions of the action.",
-        "describe-goal": "Please describe or demonstrate the goal.",
-        "describe-failure": "Please describe the failure condition.",
-        "learned-goal": "I have learned the goal.",
-        "learned-action": "I have learned the action.",
-        "learned-failure": "I have learned the failure condition.",
-        "learned-heuristic": "I have learned the heuristic.",
-        "already-learned-goal": "I know that goal and can recognize it.",
-        "already-learned-action": "I know that action and can recognize it.",
-        "already-learned-failure": "I know that failure condition and can recognize it.",
-        "gotit": "I've found a solution."
+        "your-turn": lambda msg_graph: "Your turn.",
+        "i-win": lambda msg_graph: "I win!",
+        "i-lose": lambda msg_graph: "I lose.",
+        "easy": lambda msg_graph: "That was easy!",
+        "describe-game": lambda msg_graph: "Please setup the game.",
+        "describe-puzzle": lambda msg_graph: "Please setup the puzzle.",
+        "setup-goal": lambda msg_graph: "Please setup the goal state.",
+        "tell-me-go": lambda msg_graph: "Ok: tell me when to go.",
+        "setup-failure": lambda msg_graph: "Please setup the failure condition.",
+        "define-actions": lambda msg_graph: "Can you describe the legal actions?",
+        "describe-action": lambda msg_graph: "What are the conditions of the action.",
+        "describe-goal": lambda msg_graph: "Please describe or demonstrate the goal.",
+        "describe-failure": lambda msg_graph: "Please describe the failure condition.",
+        "learned-goal": lambda msg_graph: "I have learned the goal.",
+        "learned-action": lambda msg_graph: "I have learned the action.",
+        "learned-failure": lambda msg_graph: "I have learned the failure condition.",
+        "learned-heuristic": lambda msg_graph: "I have learned the heuristic.",
+        "already-learned-goal": lambda msg_graph: "I know that goal and can recognize it.",
+        "already-learned-action": lambda msg_graph: "I know that action and can recognize it.",
+        "already-learned-failure": lambda msg_graph: "I know that failure condition and can recognize it.",
+        "gotit": lambda msg_graph: "I've found a solution.",
+
+        "single-word-message": lambda msg_graph: msg_graph['fields']['word'],
+        "say-sentence": lambda msg_graph: msg_graph['fields']['sentence'],
+        "cant-find-object": lambda msg_graph: "I can't find a " + msg_graph['fields']['object']['root-category'] + ", can you help?"
+
+
     }
 
 
