@@ -60,7 +60,8 @@ class SoarUtils:
         Given a soar identifier (root_id), crawls over the children and builds a graph rep for them
 
         Return dictionary:
-            d['__root__'] = root_id as a string
+            d['__id__'] = root_id 
+            d['__sym__'] = root_id as a string
             d['attr'] = constant # for string, double, or int value
             d['attr'] = dict # for identifier
             d['attr'] = [ val1, val2, ... ] # for multi-valued attributes
@@ -75,11 +76,13 @@ class SoarUtils:
 
         Will return the following dictionary:
         { 
-            '__root__': O32 (identifier for <obj>)
+            '__id': (sml Identifier for <obj>)
+            '__sym__': 'O32' 
             'id' : 5 (int),
             'volume': 23.3 (float),
             'predicates': {
-                '__root__': P53 (identifier for <preds>)
+                '__id__': (sml Identifier for <preds>)
+                '__sym__': 'P53'
                 'predicate': [ 'red', 'cube', 'block' ]
             }
         }
@@ -97,7 +100,8 @@ class SoarUtils:
             return id_map[root_id_str]
 
         child_wmes = dict()
-        child_wmes['__root__'] = root_id_str
+        child_wmes['__id__'] = root_id
+        child_wmes['__sym__'] = root_id_str
         id_map[root_id_str] = child_wmes
 
         if max_depth == 0:
@@ -152,7 +156,7 @@ class SoarUtils:
             return "[ " + ", ".join(SoarUtils._wm_value_to_str(i, indent, ignore_ids) for i in val) + " ]"
         if not isinstance(val, dict):
             return ""
-        id_str = val['__root__']
+        id_str = val['__sym__']
         if id_str in ignore_ids:
             return "<" + id_str + ">"
         ignore_ids.add(id_str)
@@ -160,20 +164,10 @@ class SoarUtils:
             return "<" + id_str + ">"
         s = "<" + id_str + "> {\n"
         for a, v in val.items():
-            if a == '__root__':
+            if a == '__sym__' or a == '__id__':
                 continue
             s += indent + "  " + a + ": " + SoarUtils._wm_value_to_str(v, indent + "  ", ignore_ids) + "\n"
         s += indent + "}"
         return s
-
-
-
-
-
-
-
-
-        
-
 
 

@@ -225,7 +225,7 @@ class SoarAgent():
                 args = line.split()
                 if len(args) == 3 and args[1] == '=':
                     settings[args[0].replace("-", "_")] = args[2]
-        return settings
+        return parse_settings(**settings)
 
     def _configure_settings(self, **kwargs):
         # Parse the given kwargs 

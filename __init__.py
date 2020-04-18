@@ -10,11 +10,12 @@ SVSCommands will generate svs command strings for some common use cases
 Also adds helper methods to the Identifier class to access children more easily
 (See IdentifierExtensions)
 
-Note that LanguageConnector is used in Rosie and not all that useful for general users
+Note that LanguageConnector and RosieMessageParser
+    are used in Rosie and not all that useful for general users
 """
 import Python_sml_ClientInterface as sml
 
-__all__ = ["WMInterface", "SoarWME", "SoarUtils", "SVSCommands", "AgentConnector", "LanguageConnector", "SoarAgent"]
+__all__ = ["WMInterface", "SoarWME", "SoarUtils", "SVSCommands", "AgentConnector", "LanguageConnector", "RosieMessageParser", "SoarAgent"]
 
 # Extend the sml Identifier class definition with additional utility methods
 from .IdentifierExtensions import *
@@ -30,6 +31,7 @@ from .SoarWME import SoarWME
 from .SVSCommands import SVSCommands
 from .AgentConnector import AgentConnector
 from .LanguageConnector import LanguageConnector
+from .RosieMessageParser import RosieMessageParser
 from .SoarAgent import SoarAgent
 from .SoarUtils import SoarUtils
 

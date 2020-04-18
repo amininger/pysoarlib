@@ -86,7 +86,8 @@ Note: max_depth is optional, and the function is smart about handling loops (wil
 ```
 # Returns a dictionary representing all wmes rooted at the given identifier:
 {
-  '__root__': str - the root identifier of this node
+  '__id__': Identifier - the root identifier of this node
+  '__sym__': str - the symbol of root identifier of this node
   'attr1': str | float | int - a constant wme
   'attr2': dict - an identifier wme (recursive substructure)
   'attr3': list[values] - a list of values/dicts if attr3 is a multivalued attribute
@@ -206,6 +207,18 @@ Replaces the previous message, if there is one
 
 `register_message_callback(agent_message_callback)` 
 The given callback function is called when the agent puts a message on the output-link
+ 
+
+## RosieMessageParser
+Provides static utility functions for parsing Rosie messages from the agent
+
+`parse_agent_message(msg_id:Identifier, msg_type:str)`
+Takes the given identifier, representing a message from the Rosie agent of the given type, 
+and turns it into a natural language string
+
+`parse_obj(obj_id:Identifier)`
+Turns the given identifier, representing a rosie world object, and
+returns a natural language description of the object
 
 
 
