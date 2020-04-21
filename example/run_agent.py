@@ -25,7 +25,7 @@ class SimpleConnector(AgentConnector):
             self.num.set_value(self.num.val + number)
         root_id.AddStatusComplete()
 
-agent = SoarAgent(agent_source="test-agent.soar", write_to_stdout=True)
+agent = SoarAgent(config_filename="example.config", write_to_stdout=True)
 agent.add_connector("simple", SimpleConnector(agent))
 agent.connect()
 
