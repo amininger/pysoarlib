@@ -160,11 +160,11 @@ If true, will write any soar output/printing to file agent-log.log
 #### Config File
 Instead of passing as arguments, you can pass in a filename as config_filename
 Each line in the file should be 'setting = value'
-Also, setting names use hyphens instead of underscores
-Example File:
-	agent-name = Rosie
-	agent-source = agent.soar
-	spawn-debugger = false
+Also, setting names use hyphens instead of underscores    
+Example File:    
+        agent-name = Rosie    
+        agent-source = agent.soar    
+        spawn-debugger = false    
 
 
 #### SoarAgent Methods
