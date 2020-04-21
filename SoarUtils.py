@@ -5,7 +5,7 @@ from .SoarWME import SoarWME
 class SoarUtils:
     """ A Class containing static utility methods for dealing with Soar and working memory """
 
-    def update_wm_from_tree(root_id: sml.Identifier, root_name, input_dict, wme_table):
+    def update_wm_from_tree(root_id, root_name, input_dict, wme_table):
         """
         Recursively update WMEs that have a sub-tree structure rooted at the given identifier.
 

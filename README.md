@@ -212,7 +212,7 @@ The given callback function is called when the agent puts a message on the outpu
 ## RosieMessageParser
 Provides static utility functions for parsing Rosie messages from the agent
 
-`parse_agent_message(msg_id:Identifier, msg_type:str)`
+`parse_message(msg_id:Identifier, msg_type:str)`
 Takes the given identifier, representing a message from the Rosie agent of the given type, 
 and turns it into a natural language string
 
