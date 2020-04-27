@@ -10,6 +10,7 @@ from .SoarUtils import SoarUtils
 strip_digits = lambda s: s.translate(str.maketrans('', '', digits))
 
 task_handle = lambda fields: strip_digits(fields['task-handle'])
+world_obj = lambda fields: RosieMessageParser.parse_obj(fields['object']['__id__'])
 
 class RosieMessageParser:
     def parse_message(root_id, message_type):
@@ -23,6 +24,11 @@ class RosieMessageParser:
     def parse_obj(obj_id):
         words = []
         preds_id = obj_id.GetChildId("predicates")
+        # If the object has a sentence, use that
+        sent = preds_id.GetChildString("sentence")
+        if sent is not None:
+            return sent
+
         words.append(preds_id.GetChildString("size"))
         words.append(preds_id.GetChildString("color"))
         words.append(preds_id.GetChildString("modifier1"))
@@ -78,8 +84,8 @@ class RosieMessageParser:
 
         "single-word-message": lambda fields: fields['word'],
         "say-sentence": lambda fields: fields['sentence'],
-        "cant-find-object": lambda fields: "I can't find " + \
-            RosieMessageParser.parse_obj(fields['object']['__id__']) + \
+        "agent-object-description": lambda fields: world_obj(fields),
+        "cant-find-object": lambda fields: "I can't find " + world_obj(fields) + \
             ", can you help?"
     }
 

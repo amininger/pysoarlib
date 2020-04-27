@@ -123,6 +123,7 @@ class SoarAgent():
         self.print_event_callback_id = -1
         self.init_agent_callback_id = -1
         self.connectors = {}
+        self.print_event_handlers = []
 
         self.time_info = TimeInfo()
 
@@ -131,6 +132,11 @@ class SoarAgent():
     def add_connector(self, name, connector):
         """ Adds an AgentConnector to the agent """
         self.connectors[name] = connector
+
+    def add_print_event_handler(self, handler):
+        """ calls the given handler during each soar print event, 
+            where handler is a method taking a single string argument """
+        self.print_event_handlers.append(handler)
 
     def start(self):
         """ Will start the agent (uses another thread, so non-blocking) """
@@ -335,6 +341,8 @@ class SoarAgent():
                 self.print_handler(message)
             if self.enable_log:
                 self.log_writer.write(message)
+            for ph in self.print_event_handlers:
+                ph(message)
         except:
             self.print_handler("ERROR IN PRINT HANDLER")
             self.print_handler(traceback.format_exc())
