@@ -8,28 +8,6 @@ import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
 from .TimeInfo import TimeInfo
 
-def parse_settings(**kwargs):
-    # Set config values
-    settings = {}
-    settings["agent_name"] = kwargs.get("agent_name", "soaragent")
-    settings["agent_source"] = kwargs.get("agent_source", None)
-    settings["smem_source"] = kwargs.get("smem_source", None)
-
-    settings["verbose"] = kwargs.get("verbose", "false").lower() == "true"
-    settings["watch_level"] = int(kwargs.get("watch_level", "1"))
-    settings["spawn_debugger"] = kwargs.get("spawn_debugger", "false").lower() == "true"
-    settings["write_to_stdout"] = kwargs.get("write_to_stdout", "false").lower() == "true"
-    settings["enable_log"] = kwargs.get("enable_log", "false").lower() == "true"
-    settings["log_filename"] = kwargs.get("log_filename", "agent-log.txt")
-
-    for arg in kwargs:
-        if arg not in settings:
-            settings[arg] = kwargs[arg]
-
-    return settings
-
-
-
 class SoarAgent():
     """ A wrapper class for creating and using a soar SML Agent """
     def __init__(self, print_handler=None, config_filename=None, **kwargs):
@@ -75,31 +53,16 @@ class SoarAgent():
         if print_handler == None:
             self.print_handler = print
 
+        # Gather settings, filling in defaults as needed
+        self.kwarg_keys = set(kwargs.keys())
+        self.settings = kwargs
         self.config_filename = config_filename
-
-        self._configure_settings(**kwargs)
-
-        self.agent_name = self.settings.get("agent_name", "soaragent")
-        self.agent_source = self.settings.get("agent_source", None)
-        self.smem_source = self.settings.get("smem_source", None)
-
-        self.verbose = self.settings.get("verbose", False)
-        self.watch_level = self.settings.get("watch_level", 1)
-        self.spawn_debugger = self.settings.get("spawn_debugger", False)
-        self.write_to_stdout = self.settings.get("write_to_stdout", False)
-        self.enable_log = self.settings.get("enable_log", False)
-        self.log_filename = self.settings.get("log_filename", "agent-log.txt")
+        self._read_config_file()
+        self._apply_settings()
 
         self.connected = False
         self.is_running = False
         self.queue_stop = False
-        self.dc_sleep = 0.0
-
-        self.kernel = sml.Kernel.CreateKernelInNewThread()
-        self.kernel.SetAutoCommit(False)
-
-        if self.enable_log:
-            self.log_writer = open(self.log_filename, 'w')
 
         self.run_event_callback_id = -1
         self.print_event_callback_id = -1
@@ -109,6 +72,8 @@ class SoarAgent():
 
         self.time_info = TimeInfo()
 
+        self.kernel = sml.Kernel.CreateKernelInNewThread()
+        self.kernel.SetAutoCommit(False)
         self._create_soar_agent()
 
     def add_connector(self, name, connector):
@@ -150,9 +115,8 @@ class SoarAgent():
         self.run_event_callback_id = self.agent.RegisterForRunEvent(
             sml.smlEVENT_BEFORE_INPUT_PHASE, SoarAgent._run_event_handler, self)
 
-        if self.enable_log or self.write_to_stdout:
-            self.print_event_callback_id = self.agent.RegisterForPrintEvent(
-                    sml.smlEVENT_PRINT, SoarAgent._print_event_handler, self)
+        self.print_event_callback_id = self.agent.RegisterForPrintEvent(
+                sml.smlEVENT_PRINT, SoarAgent._print_event_handler, self)
 
         self.init_agent_callback_id = self.kernel.RegisterForAgentEvent(
                 sml.smlEVENT_BEFORE_AGENT_REINITIALIZED, SoarAgent._init_agent_handler, self)
@@ -197,37 +161,53 @@ class SoarAgent():
 
 
 #### Internal Methods
-    def _parse_config_file(self):
-        """ Parses a config file and returns a dictionary with the parsed agent settings
+    def _read_config_file(self):
+        """ Will read the given config file and update self.settings as necessary (wont overwrite kwarg settings)
 
         Will throw an error if the file doesn't exist
-        Config file is a text file with lines of the form 'setting = value'
-        """
-        settings = {}
-        with open(self.config_filename, 'r') as fin:
-            for line in fin:
-                args = line.split()
-                if len(args) == 3 and args[1] == '=':
-                    settings[args[0].replace("-", "_")] = args[2]
-        return parse_settings(**settings)
+        config_filename is a text file with lines of the form 'setting = value'"""
 
-    def _configure_settings(self, **kwargs):
-        # Parse the given kwargs 
-        self.settings = kwargs
         # Add any settings in the config file (if it exists)
         if self.config_filename is not None:
-            config_settings = self._parse_config_file()
-            for key, value in config_settings.items():
-                # Add settings from config file if not overridden in kwargs
-                if key not in kwargs:
-                    self.settings[key] = value
+            with open(self.config_filename, 'r') as fin:
+                config_args = [ line.split() for line in fin ]
 
+            for args in config_args:
+                if len(args) == 3 and args[1] == '=':
+                    key = args[0].replace("-", "_")
+                    # Add settings from config file if not overridden in kwargs
+                    if key not in self.kwarg_keys:
+                        self.settings[key] = args[2]
+
+    def _apply_settings(self):
+        """ Set up the SoarAgent object by copying settings or filling in default values """
+        self.agent_name = self.settings.get("agent_name", "soaragent")
+        self.agent_source = self.settings.get("agent_source", None)
+        self.smem_source = self.settings.get("smem_source", None)
+
+        self.verbose = self._parse_bool_setting("verbose", False)
+        self.watch_level = int(self.settings.get("watch_level", 1))
+        self.spawn_debugger = self._parse_bool_setting("spawn_debugger", False)
+        self.write_to_stdout = self._parse_bool_setting("write_to_stdout", False)
+        self.enable_log = self._parse_bool_setting("enable_log", False)
+        self.log_filename = self.settings.get("log_filename", "agent-log.txt")
+
+    def _parse_bool_setting(self, name, default):
+        if name not in self.settings:
+            return default
+        val = self.settings[name]
+        if type(val) == str:
+            return val.lower() == "true"
+        return val
 
     def _run_thread(self):
         self.agent.ExecuteCommandLine("run")
         self.is_running = False
 
     def _create_soar_agent(self):
+        if self.enable_log:
+            self.log_writer = open(self.log_filename, 'w')
+
         self.agent = self.kernel.CreateAgent(self.agent_name)
         if self.spawn_debugger:
             success = self.agent.SpawnDebugger(self.kernel.GetListenerPort())
@@ -270,6 +250,9 @@ class SoarAgent():
             self.agent.KillDebugger()
         self.kernel.DestroyAgent(self.agent)
         self.agent = None
+        if self.enable_log:
+            self.log_writer.close()
+            self.log_writer = None
 
     @staticmethod
     def _init_agent_handler(eventID, self, info):
@@ -286,8 +269,6 @@ class SoarAgent():
 
 
     def _on_input_phase(self, input_link):
-        if self.dc_sleep > 0:
-            sleep(self.dc_sleep)
         try:
             if self.queue_stop:
                 self.agent.StopSelf()
