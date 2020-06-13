@@ -4,8 +4,6 @@ from threading import Thread
 import traceback
 from time import sleep
 
-import subprocess
-
 import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
 from .TimeInfo import TimeInfo
@@ -13,12 +11,9 @@ from .TimeInfo import TimeInfo
 def parse_settings(**kwargs):
     # Set config values
     settings = {}
-    settings["source_config"] = kwargs.get("source_config", None)
     settings["agent_name"] = kwargs.get("agent_name", "soaragent")
     settings["agent_source"] = kwargs.get("agent_source", None)
     settings["smem_source"] = kwargs.get("smem_source", None)
-
-    settings["messages_file"] = kwargs.get("messages_file", None)
 
     settings["verbose"] = kwargs.get("verbose", "false").lower() == "true"
     settings["watch_level"] = int(kwargs.get("watch_level", "1"))
@@ -26,7 +21,6 @@ def parse_settings(**kwargs):
     settings["write_to_stdout"] = kwargs.get("write_to_stdout", "false").lower() == "true"
     settings["enable_log"] = kwargs.get("enable_log", "false").lower() == "true"
     settings["log_filename"] = kwargs.get("log_filename", "agent-log.txt")
-    settings["reconfig_on_launch"] = kwargs.get("reconfig_on_launch", "false").lower() == "true"
 
     for arg in kwargs:
         if arg not in settings:
@@ -44,16 +38,8 @@ class SoarAgent():
         print_handler determines how output is printed, defaults to python print
         config_filename if specified will read config info (kwargs) from a file
             Config file is a text file with lines of the form 'setting = value'
-            It uses the same setting names as above, but with - intead of _
-                e.g. agent-name = Rosie
 
         ============== kwargs =============
-
-        source_config = [string]
-            The file used to configure this agent (Rosie-specific configuration)
-
-        reconfig_on_launch = true|false (default=false)
-            If true, the agent will use the Rosie java configuration tool to re-generate the agent before continuing
 
         agent_name = [string] (default=soaragent)
             Name to give the SML Agent when it is created
@@ -77,9 +63,9 @@ class SoarAgent():
             If true, will print all soar output to the given print_handler (default is python print)
 
         enable_log = true|false
-            If true, will write all soar output to a file called agent-log.txt
+            If true, will write all soar output to a file given by log_filename
 
-        log_filename = [filename]
+        log_filename = [filename] (default = agent-log.txt)
             Specify the name of the log file to write
         
         Note: Still need to call connect() to register event handlers
@@ -93,7 +79,6 @@ class SoarAgent():
 
         self._configure_settings(**kwargs)
 
-        self.source_config = self.settings.get("source_config", None)
         self.agent_name = self.settings.get("agent_name", "soaragent")
         self.agent_source = self.settings.get("agent_source", None)
         self.smem_source = self.settings.get("smem_source", None)
@@ -104,9 +89,6 @@ class SoarAgent():
         self.write_to_stdout = self.settings.get("write_to_stdout", False)
         self.enable_log = self.settings.get("enable_log", False)
         self.log_filename = self.settings.get("log_filename", "agent-log.txt")
-
-        self.messages_file = self.settings.get("messages_file", None)
-        self.reconfig_on_launch = self.settings.get("reconfig_on_launch", False)
 
         self.connected = False
         self.is_running = False
@@ -153,14 +135,12 @@ class SoarAgent():
         Note: Non-blocking, agent may run for a bit after this call finishes"""
         self.queue_stop = True
 
-    def execute_command(self, cmd):
+    def execute_command(self, cmd, print_res=False):
         """ Execute a soar command, write output to print_handler """
-        self.print_handler(cmd)
-        self.print_handler(self.agent.ExecuteCommandLine(cmd).strip())
-
-    def get_command_result(self, cmd):
-        """ Execute a soar command, then result the result as a string """
-        return self.agent.ExecuteCommandLine(cmd)
+        result = self.agent.ExecuteCommandLine(cmd).strip()
+        if print_res:
+            self.print_handler(cmd)
+            self.print_handler(result)
 
     def connect(self):
         """ Register event handlers for agent and connectors """
@@ -222,8 +202,6 @@ class SoarAgent():
 
         Will throw an error if the file doesn't exist
         Config file is a text file with lines of the form 'setting = value'
-        It uses the same setting names as above, but with - intead of _
-            e.g. agent-name = Rosie
         """
         settings = {}
         with open(self.config_filename, 'r') as fin:
@@ -250,11 +228,6 @@ class SoarAgent():
         self.is_running = False
 
     def _create_soar_agent(self):
-        if self.source_config is not None and self.reconfig_on_launch:
-            # Rerun the configuration tool and re-source the config file
-            self.print_handler("RUNNING CONFIGURATOR: " + self.source_config)
-            subprocess.check_output(['java', 'edu.umich.rosie.tools.config.RosieAgentConfigurator', self.source_config])
-
         self.agent = self.kernel.CreateAgent(self.agent_name)
         if self.spawn_debugger:
             success = self.agent.SpawnDebugger(self.kernel.GetListenerPort())
