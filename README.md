@@ -101,6 +101,9 @@ print_handler determines how output is printed, defaults to normal python print
 `add_output_command(command_name:str)`     
 Will register a handler that listens to output link commands with the given name
 
+`add_print_event_handler(handler:func)`     
+Will register a print event handler (function taking 1 string argument) that will be called whenever a soar print event occurs. 
+
 `on_init_soar()`     
 Event Handler called when init-soar happens (need to release SML working memory objects)
 
