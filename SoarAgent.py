@@ -101,11 +101,13 @@ class SoarAgent():
         self.queue_stop = True
 
     def execute_command(self, cmd, print_res=False):
-        """ Execute a soar command, write output to print_handler """
+        """ Execute a soar command and return result, 
+            write output to print_handler if print_res is True """
         result = self.agent.ExecuteCommandLine(cmd).strip()
         if print_res:
             self.print_handler(cmd)
             self.print_handler(result)
+        return result
 
     def connect(self):
         """ Register event handlers for agent and connectors """
