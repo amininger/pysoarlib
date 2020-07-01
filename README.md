@@ -34,8 +34,11 @@ Will create the soar kernel and agent, as well as source the agent files.
 `config_filename` names a file with agent settings in it
 
 
-`add_connector(AgentConnector)`    
+`add_connector(AgentConnector, name:str)`    
 Adds the given connector and will invoke callbacks on it (such as on_input_phase)
+
+`get_connector(name:str)`    
+Returns a connector of the given name, or None
 
 `add_print_event_handler(handler)`   
 Will call the given handler during each soar print event (handler should be a method taking 1 string)
@@ -79,6 +82,8 @@ If true, will spawn the soar debugger
 If true, will echo any soar output/printing via print_handler
 * enable_log = [bool]     
 If true, will write any soar output/printing to file agent-log.log
+* log_filename = [filename]    
+Optionally specify the name of the log file
 
 Instead of passing as arguments, you can include them in a file specified by config_filename
 Each line in the file should be 'setting = value'
@@ -210,7 +215,7 @@ where the keys are identifiers, and the values are lists of wme triples rooted a
 Recursively explores all working memory reachable from the given root_id (up to max_depth),
 builds up a graph structure representing all that information. 
 
-Note: max_depth is optional (defauls to no depth limit), and the function is smart about handling cycles (will not recurse forever)
+Note: max_depth is optional (defaults to no depth limit), and the function is smart about handling cycles (will not recurse forever)
 
 ```
 # Returns a WMNode object wrapping the root_id and containing links to children
