@@ -18,8 +18,8 @@ help(pysoarlib.SoarAgent)
 * [WMInterface](#wminterface)
 * [SoarWME](#soarwme)
 * [SVSCommands](#svscommands)
-* [SoarUtils](#soarutils)
 * [TimeInfo](#timeinfo)
+* [util](#util)
 
 <a name="soaragent"></a>
 # SoarAgent
@@ -184,12 +184,41 @@ Here pos, rot, and scl are lists of 3 numbers (like [1, 2.5, 3.1])
 * `change_tag(obj_id, tag_name, tag_value)`
 * `delete_tag(obj_id, tag_name)`
 
+<a name="timeinfo"></a>
+# TimeInfo
+Adds timing information to the input-link, used internally by SoarAgent
 
-<a name="soarutils"></a>
-# SoarUtils:
+<a name="util"></a>
+# pysoarlib.util:
 Contains several utility functions for reading/writing working memory through sml structures. 
 
-`SoarUtils.update_wm_from_tree(root_id, root_name, input_dict, wme_table)`
+#### `parse_wm_printout(text:str)`   
+
+Given a printout of soar's working memory (p S1 -d 4), parses it into a dictionary of wmes, 
+where the keys are identifiers, and the values are lists of wme triples rooted at that id.
+
+
+#### `extract_wm_graph(root_id, max_depth)`
+
+Recursively explores all working memory reachable from the given root_id (up to max_depth),
+builds up a graph structure representing all that information. 
+
+Note: max_depth is optional (defauls to no depth limit), and the function is smart about handling cycles (will not recurse forever)
+
+```
+# Returns a WMNode object wrapping the root_id and containing links to children
+node.id = root_id (Identifier)
+node.symbol = string (The root_id symbol e.g. O34)
+node.attributes() - returns a list of child attribute strings
+node['attr'] = WMNode   # for child identifiers
+node['attr'] = constant # for string, double, or int value
+node['attr'] = [ val1, val2, ... ] # for multi-valued attributes 
+               (values can be constants or WMNodes)
+str(node) - will pretty-print the node and all children recursively
+```
+
+
+#### `update_wm_from_tree(root_id, root_name, input_dict, wme_table)`
 
 Will update working memory using the given `input_dict` as the provided structure rooted at `root_id`. 
 Created wme's are stored in the given `wme_table`, which should be a dictionary that is kept across
@@ -203,30 +232,9 @@ multiple calls to this function. `root_name` specifies a prefix for each wme nam
 }
 ```
 
-`SoarUtils.extract_wm_graph(root_id, max_depth)`
-
-Recursively explores all working memory reachable from the given root_id (up to max_depth),
-builds up a graph structure representing all that information. 
-
-Note: max_depth is optional, and the function is smart about handling loops (will not recurse forever)
-
-```
-# Returns a dictionary representing all wmes rooted at the given identifier:
-{
-  '__id__': Identifier - the root identifier of this node
-  '__sym__': str - the symbol of root identifier of this node
-  'attr1': str | float | int - a constant wme
-  'attr2': dict - an identifier wme (recursive substructure)
-  'attr3': list[values] - a list of values/dicts if attr3 is a multivalued attribute
-}
-```
-
-`SoarUtils.print_wm_graph(wm_graph)`
-
-Will print the graph produced by extract_wm_graph in a nicely formatted way
+#### `remove_tree_from_wm(wme_table)`    
+      
+Given a wme_table filled by `SoarUtils.update_wm_from_tree`, removes all wmes from working memory 
 
 
-<a name="timeinfo"></a>
-# TimeInfo
-Adds timing information to the input-link, used internally by SoarAgent
-	
+

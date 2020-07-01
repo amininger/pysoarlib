@@ -13,7 +13,7 @@ Also adds helper methods to the Identifier class to access children more easily
 """
 import Python_sml_ClientInterface as sml
 
-__all__ = ["WMInterface", "SoarWME", "SoarUtils", "SVSCommands", "AgentConnector", "SoarAgent"]
+__all__ = ["WMInterface", "SoarWME", "SVSCommands", "AgentConnector", "SoarAgent"]
 
 # Extend the sml Identifier class definition with additional utility methods
 from .IdentifierExtensions import *
@@ -29,6 +29,5 @@ from .SoarWME import SoarWME
 from .SVSCommands import SVSCommands
 from .AgentConnector import AgentConnector
 from .SoarAgent import SoarAgent
-from .SoarUtils import SoarUtils
 
 

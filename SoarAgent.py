@@ -80,6 +80,10 @@ class SoarAgent():
         """ Adds an AgentConnector to the agent """
         self.connectors[name] = connector
 
+    def get_connector(self, name):
+        """ Returns the AgentConnector with the given name, or None """
+        return self.connectors.get(name, None)
+
     def add_print_event_handler(self, handler):
         """ calls the given handler during each soar print event, 
             where handler is a method taking a single string argument """
