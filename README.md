@@ -132,7 +132,7 @@ Given an attribute, will look for a child IntegerWME of the form `(<id> ^attribu
 Given an attribute, will look for a child FloatWME of the form `(<id> ^attribute <value>)` and return the value as an float
 
 `Identifier.GetChildId(attribute:str)`     
-Given an attribute, will look for a child WME of the form `(<id> ^attribute <child_id>)` and return an Identifier with <child_id> as the root
+Given an attribute, will look for a child WME of the form `(<id> ^attribute <child_id>)` and return an Identifier with child_id as the root
 
 `Identifier.GetAllChildIds(attribute:str=None)`     
 Given an attribute, returns a list of Identifiers from all child WME's matching `(<id> ^attribute <child_id>)`
@@ -188,9 +188,16 @@ Here pos, rot, and scl are lists of 3 numbers (like [1, 2.5, 3.1])
 # TimeInfo
 Adds timing information to the input-link, used internally by SoarAgent
 
+```
+# Will add and update the following on the input-link:
+([input-link] ^time [t])
+([t] ^seconds [secs] # Number of real-time seconds elapsed since the agent started
+     ^steps [steps]) # Number of decision cycles since the agent started
+```
+
 <a name="util"></a>
-# pysoarlib.util:
-Contains several utility functions for reading/writing working memory through sml structures. 
+# pysoarlib.util
+Package containing several utility functions for reading/writing working memory through sml structures.
 
 #### `parse_wm_printout(text:str)`   
 
