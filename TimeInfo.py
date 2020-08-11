@@ -11,6 +11,7 @@ class TimeInfo(WMInterface):
 
         self.time_id = None
         self.seconds = SoarWME("seconds", 0) # number of real-time seconds elapsed since start of agent
+        self.milsecs = SoarWME("milliseconds", 0) # number of real-time milliseconds elapsed since start of agent
         self.steps = SoarWME("steps", 0)     # number of decision cycles the agent has taken
 
         # Clock info, simulates a 24-hour clock tied to dc's as opposed to real-world time (advances some # of seconds every dc)
@@ -21,6 +22,7 @@ class TimeInfo(WMInterface):
     # Resets the time info
     def reset_time(self):
         self.clock_info = [8, 0, 0, 0] # [ hour, min, sec, tot-sec ]
+        self.milsecs.set_value(0)
         self.seconds.set_value(0)
         self.steps.set_value(0)
         self.start_time = current_time_ms()
@@ -39,6 +41,7 @@ class TimeInfo(WMInterface):
                     self.clock_info[0] -= 24
         self.clock_info[3] += num_secs
 
+        self.milsecs.set_value(int(current_time_ms() - self.start_time))
         self.seconds.set_value(int((current_time_ms() - self.start_time)/1000))
         self.steps.set_value(self.steps.get_value() + 1)
 
@@ -46,6 +49,7 @@ class TimeInfo(WMInterface):
 
     def _add_to_wm_impl(self, parent_id):
         self.time_id = parent_id.CreateIdWME("time")
+        self.milsecs.add_to_wm(self.time_id)
         self.seconds.add_to_wm(self.time_id)
         self.steps.add_to_wm(self.time_id)
 
@@ -55,6 +59,7 @@ class TimeInfo(WMInterface):
             wme.add_to_wm(self.clock_id)
 
     def _update_wm_impl(self):
+        self.milsecs.update_wm()
         self.seconds.update_wm()
         self.steps.update_wm()
         for i, wme in enumerate(self.clock_wmes):
@@ -64,6 +69,7 @@ class TimeInfo(WMInterface):
     def _remove_from_wm_impl(self):
         for wme in self.clock_wmes:
             wme.remove_from_wm()
+        self.milsecs.remove_from_wm()
         self.seconds.remove_from_wm()
         self.steps.remove_from_wm()
         self.time_id.DestroyWME()
