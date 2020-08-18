@@ -18,7 +18,7 @@ help(pysoarlib.SoarAgent)
 * [WMInterface](#wminterface)
 * [SoarWME](#soarwme)
 * [SVSCommands](#svscommands)
-* [TimeInfo](#timeinfo)
+* [TimeConnector](#timeconnector)
 * [util](#util)
 
 <a name="soaragent"></a>
@@ -184,9 +184,11 @@ Here pos, rot, and scl are lists of 3 numbers (like [1, 2.5, 3.1])
 * `change_tag(obj_id, tag_name, tag_value)`
 * `delete_tag(obj_id, tag_name)`
 
-<a name="timeinfo"></a>
-# TimeInfo
-Adds timing information to the input-link, used internally by SoarAgent
+<a name="timeconnector"></a>
+# TimeConnector
+An AgentConnector that will create time info on the input-link. 
+Includes elapsed time since the agent started, and can have a real-time or simulated wall clock. 
+
 
 <a name="util"></a>
 # pysoarlib.util:

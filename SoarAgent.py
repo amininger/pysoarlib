@@ -45,6 +45,9 @@ class SoarAgent():
 
         log_filename = [filename] (default = agent-log.txt)
             Specify the name of the log file to write
+
+        remote_connection = true|false (default=false)
+            If true, will connect to a remote kernel instead of creating a new one
         
         Note: Still need to call connect() to register event handlers
         """
@@ -70,10 +73,12 @@ class SoarAgent():
         self.connectors = {}
         self.print_event_handlers = []
 
-        self.time_info = TimeInfo()
+        if self.remote_connection:
+            self.kernel = sml.Kernel.CreateRemoteConnection()
+        else:
+            self.kernel = sml.Kernel.CreateKernelInNewThread()
+            self.kernel.SetAutoCommit(False)
 
-        self.kernel = sml.Kernel.CreateKernelInNewThread()
-        self.kernel.SetAutoCommit(False)
         self._create_soar_agent()
 
     def add_connector(self, name, connector):
@@ -163,7 +168,10 @@ class SoarAgent():
     def kill(self):
         """ Will destroy the current agent + kernel, cleans up everything """
         self._destroy_soar_agent()
-        self.kernel.Shutdown()
+        if self.remote_connection:
+            self.kernel = None
+        else:
+            self.kernel.Shutdown()
 
 
 #### Internal Methods
@@ -193,6 +201,7 @@ class SoarAgent():
 
         self.verbose = self._parse_bool_setting("verbose", False)
         self.watch_level = int(self.settings.get("watch_level", 1))
+        self.remote_connection = self._parse_bool_setting("remote-connection", False)
         self.spawn_debugger = self._parse_bool_setting("spawn_debugger", False)
         self.write_to_stdout = self._parse_bool_setting("write_to_stdout", False)
         self.enable_log = self._parse_bool_setting("enable_log", False)
@@ -214,11 +223,15 @@ class SoarAgent():
         if self.enable_log:
             self.log_writer = open(self.log_filename, 'w')
 
-        self.agent = self.kernel.CreateAgent(self.agent_name)
+        if self.remote_connection:
+            self.agent = self.kernel.GetAgent(0)
+        else:
+            self.agent = self.kernel.CreateAgent(self.agent_name)
+            self._source_agent()
+
         if self.spawn_debugger:
             success = self.agent.SpawnDebugger(self.kernel.GetListenerPort())
 
-        self._source_agent()
         self.agent.ExecuteCommandLine("w " + str(self.watch_level))
 
     def _source_agent(self):
@@ -243,8 +256,6 @@ class SoarAgent():
         for connector in self.connectors.values():
             connector.on_init_soar()
 
-        self.time_info.remove_from_wm()
-        self.time_info.reset_time()
 
     def _destroy_soar_agent(self):
         self.stop()
@@ -254,7 +265,8 @@ class SoarAgent():
         self.disconnect()
         if self.spawn_debugger:
             self.agent.KillDebugger()
-        self.kernel.DestroyAgent(self.agent)
+        if not self.remote_connection:
+            self.kernel.DestroyAgent(self.agent)
         self.agent = None
         if self.enable_log:
             self.log_writer.close()
@@ -273,15 +285,12 @@ class SoarAgent():
         if eventID == sml.smlEVENT_BEFORE_INPUT_PHASE:
             self._on_input_phase(agent.GetInputLink())
 
-
     def _on_input_phase(self, input_link):
         try:
             if self.queue_stop:
                 self.agent.StopSelf()
                 self.queue_stop = False
 
-            self.time_info.tick(5)
-            self.time_info.update_wm(input_link)
 
             for connector in self.connectors.values():
                 connector.on_input_phase(input_link)
