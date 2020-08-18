@@ -34,8 +34,11 @@ Will create the soar kernel and agent, as well as source the agent files.
 `config_filename` names a file with agent settings in it
 
 
-`add_connector(AgentConnector)`    
+`add_connector(AgentConnector, name:str)`    
 Adds the given connector and will invoke callbacks on it (such as on_input_phase)
+
+`get_connector(name:str)`    
+Returns a connector of the given name, or None
 
 `add_print_event_handler(handler)`   
 Will call the given handler during each soar print event (handler should be a method taking 1 string)
@@ -79,6 +82,8 @@ If true, will spawn the soar debugger
 If true, will echo any soar output/printing via print_handler
 * enable_log = [bool]     
 If true, will write any soar output/printing to file agent-log.log
+* log_filename = [filename]    
+Optionally specify the name of the log file
 
 Instead of passing as arguments, you can include them in a file specified by config_filename
 Each line in the file should be 'setting = value'
@@ -132,7 +137,7 @@ Given an attribute, will look for a child IntegerWME of the form `(<id> ^attribu
 Given an attribute, will look for a child FloatWME of the form `(<id> ^attribute <value>)` and return the value as an float
 
 `Identifier.GetChildId(attribute:str)`     
-Given an attribute, will look for a child WME of the form `(<id> ^attribute <child_id>)` and return an Identifier with <child_id> as the root
+Given an attribute, will look for a child WME of the form `(<id> ^attribute <child_id>)` and return an Identifier with child_id as the root
 
 `Identifier.GetAllChildIds(attribute:str=None)`     
 Given an attribute, returns a list of Identifiers from all child WME's matching `(<id> ^attribute <child_id>)`
@@ -190,9 +195,16 @@ An AgentConnector that will create time info on the input-link.
 Includes elapsed time since the agent started, and can have a real-time or simulated wall clock. 
 
 
+```
+# Will add and update the following on the input-link:
+([input-link] ^time [t])
+([t] ^seconds [secs] # Number of real-time seconds elapsed since the agent started
+     ^steps [steps]) # Number of decision cycles since the agent started
+```
+
 <a name="util"></a>
-# pysoarlib.util:
-Contains several utility functions for reading/writing working memory through sml structures. 
+# pysoarlib.util
+Package containing several utility functions for reading/writing working memory through sml structures.
 
 #### `parse_wm_printout(text:str)`   
 
@@ -205,7 +217,7 @@ where the keys are identifiers, and the values are lists of wme triples rooted a
 Recursively explores all working memory reachable from the given root_id (up to max_depth),
 builds up a graph structure representing all that information. 
 
-Note: max_depth is optional (defauls to no depth limit), and the function is smart about handling cycles (will not recurse forever)
+Note: max_depth is optional (defaults to no depth limit), and the function is smart about handling cycles (will not recurse forever)
 
 ```
 # Returns a WMNode object wrapping the root_id and containing links to children
