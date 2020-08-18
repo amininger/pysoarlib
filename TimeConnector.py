@@ -50,8 +50,8 @@ class TimeConnector(AgentConnector):
         self.clock_wmes = [ SoarWME("hour", 0), SoarWME("minute", 0), SoarWME("second", 0), SoarWME("millisecond", 0), SoarWME("epoch", 0) ]
         self.reset_time()
 
-    # Advances the simulated clock by the given number of milliseconds
     def advance_clock(self, num_ms):
+        """ Advances the simulated clock by the given number of milliseconds """
         self.clock_info[3] += num_ms
         # MS
         if self.clock_info[3] >= 1000:
@@ -69,8 +69,8 @@ class TimeConnector(AgentConnector):
                 # Hours
                 self.clock_info[0] = self.clock_info[0] % 24
 
-    # Updates the clock with the real time
     def update_clock(self):
+        """ Updates the clock with the real time """
         localtime = time.localtime()
         self.clock_info[0] = localtime.tm_hour
         self.clock_info[1] = localtime.tm_min
@@ -78,8 +78,8 @@ class TimeConnector(AgentConnector):
         self.clock_info[3] = current_time_ms() % 1000
         self.clock_info[4] = int(time.time())
 
-    # Resets the time info
     def reset_time(self):
+        """ Resets the time info """
         # If simulating clock, default epoch is Jan 1, 2020 at 8 AM
         default_epoch = int(time.mktime(datetime.datetime(2020, 1, 1, 8, 0, 0, 0).timetuple()))
         self.clock_info = [8, 0, 0, 0, default_epoch] # [ hour, min, sec, ms, epoch ]

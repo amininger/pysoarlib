@@ -6,7 +6,6 @@ from time import sleep
 
 import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
-from .TimeInfo import TimeInfo
 
 class SoarAgent():
     """ A wrapper class for creating and using a soar SML Agent """
