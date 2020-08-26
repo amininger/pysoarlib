@@ -33,6 +33,9 @@ class SoarAgent():
         watch_level = [int] (default=1)
             The watch level to use (controls amount of info printed, 0=none, 5=all)
 
+        start_running = true|false (default=false)
+            If true, will immediately start the agent running
+
         spawn_debugger = true|false (default=false)
             If true, will spawn the java soar debugger
 
@@ -136,6 +139,9 @@ class SoarAgent():
 
         self.connected = True
 
+        if self.start_running:
+            self.start()
+
     def disconnect(self):
         """ Unregister event handlers for agent and connectors """
         if not self.connected:
@@ -202,6 +208,7 @@ class SoarAgent():
         self.watch_level = int(self.settings.get("watch_level", 1))
         self.remote_connection = self._parse_bool_setting("remote-connection", False)
         self.spawn_debugger = self._parse_bool_setting("spawn_debugger", False)
+        self.start_running = self._parse_bool_setting("start_running", False)
         self.write_to_stdout = self._parse_bool_setting("write_to_stdout", False)
         self.enable_log = self._parse_bool_setting("enable_log", False)
         self.log_filename = self.settings.get("log_filename", "agent-log.txt")

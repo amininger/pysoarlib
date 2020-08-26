@@ -78,6 +78,8 @@ If true, prints additional info when sourcing
 Determines how much detail to print
 * spawn_debugger = [bool]     
 If true, will spawn the soar debugger
+* start_running = [bool]     
+If true, will run the agent after it is created + connected
 * write_to_stdout = [bool]     
 If true, will echo any soar output/printing via print_handler
 * enable_log = [bool]     

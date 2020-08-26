@@ -136,6 +136,8 @@ class TimeConnector(AgentConnector):
             wme.update_wm()
 
     def _remove_from_wm(self):
+        if self.time_id is None:
+            return
         for wme in self.clock_wmes:
             wme.remove_from_wm()
         self.milsecs.remove_from_wm()
