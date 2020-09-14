@@ -316,6 +316,7 @@ class SoarAgent():
                 self.print_handler(message)
             if self.enable_log:
                 self.log_writer.write(message)
+                self.log_writer.flush()
             for ph in self.print_event_handlers:
                 ph(message)
         except:
