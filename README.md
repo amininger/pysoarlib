@@ -19,7 +19,6 @@ help(pysoarlib.SoarAgent)
 * [SoarWME](#soarwme)
 * [SVSCommands](#svscommands)
 * [TimeConnector](#timeconnector)
-* [WMView](#wmview)
 * [util](#util)
 
 <a name="soaragent"></a>
@@ -150,7 +149,9 @@ If no attribute is specified, all child Identifiers are returned
 Given an attribute, returns a list of strings from all child WME's matching `(<id> ^attribute <value>)`
 If no attribute is specified, all child WME values (non-identifiers) are returned
 
-
+`Identifier.GetAllChildWmes()`     
+Returns a list of (attr, val) tuples representing all wmes rooted at this identifier.
+val will either be an Identifier or a string, depending on its type """
 
 
 <a name="wminterface"></a>
@@ -205,33 +206,6 @@ Includes elapsed time since the agent started, and can have a real-time or simul
      ^steps [steps]) # Number of decision cycles since the agent started
 ```
 
-<a name="wmview"></a>
-# WMView
-
-WMView serves as an abstraction that provides a working memory like interface for wrapped data.
-It allows you to write code that takes a WMView and uses it to extract information from a graph representation
-without knowing the underlying representation. 
-Users of the WMView should not assume anything about the type of an identifer, it is specific to the derived class.
-Only use it as a handle when calling view methods. 
-
-WMView provides the following interface:
-* `__init__(root_id)`
-* `get_root() -> id`
-* `id_to_str(id) -> str`
-* `get_child_id(id, attr:str) -> id`
-* `get_all_child_ids(id, attr:str) -> [id]`
-* `get_value(id, attr:str) -> str`
-* `get_all_values(id, attr:str) -> [str]`
-* `get_wmes(id) -> [ (str, id) ]`
-
-pysoarlib has 2 implementations of a WMView. 
-
-* `SmlView(root_id:Identifier)` supports extracting the graph representation from SML objects
-* `PrintoutView(printout:str)` supports extracting the graph representation from the result of a soar print command. 
-
-
-
-
 <a name="util"></a>
 # pysoarlib.util
 Package containing several utility functions for reading/writing working memory through sml structures.
@@ -240,6 +214,9 @@ Package containing several utility functions for reading/writing working memory 
 
 Given a printout of soar's working memory (p S1 -d 4), parses it into a dictionary of wmes, 
 where the keys are identifiers, and the values are lists of wme triples rooted at that id.
+
+You can wrap the result with a PrintoutIdentifier(wmes, root_id) which will provide an Identifier-like
+iterface for crawling over the graph structure. It provides all the methods in the IdentifierExtensions interface.
 
 
 #### `extract_wm_graph(root_id, max_depth)`

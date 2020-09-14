@@ -63,3 +63,17 @@ def get_all_child_values(self, attribute=None):
         if attribute == None or wme.GetAttribute() == attribute:
             child_values.append(wme.GetValueAsString())
     return child_values
+
+def get_all_child_wmes(self):
+    """ Returns a list of (attr, val) tuples representing all wmes rooted at this identifier
+        val will either be an Identifier or a string, depending on its type """
+    wmes = []
+    for index in range(self.GetNumberChildren()):
+        wme = self.GetChild(index)
+        if wme.IsIdentifier():
+            wmes.append( (wme.GetAttribute(), wme.ConvertToIdentifier()) )
+        else:
+            wmes.append( (wme.GetAttribute(), wme.GetValueAsString()) )
+    return wmes
+
+
