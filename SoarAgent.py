@@ -173,11 +173,8 @@ class SoarAgent():
     def kill(self):
         """ Will destroy the current agent + kernel, cleans up everything """
         self._destroy_soar_agent()
-        if self.remote_connection:
-            self.kernel = None
-        else:
-            self.kernel.Shutdown()
-
+        self.kernel.Shutdown()
+        self.kernel = None
 
 #### Internal Methods
     def _read_config_file(self):
@@ -206,7 +203,7 @@ class SoarAgent():
 
         self.verbose = self._parse_bool_setting("verbose", False)
         self.watch_level = int(self.settings.get("watch_level", 1))
-        self.remote_connection = self._parse_bool_setting("remote-connection", False)
+        self.remote_connection = self._parse_bool_setting("remote_connection", False)
         self.spawn_debugger = self._parse_bool_setting("spawn_debugger", False)
         self.start_running = self._parse_bool_setting("start_running", False)
         self.write_to_stdout = self._parse_bool_setting("write_to_stdout", False)
@@ -230,7 +227,7 @@ class SoarAgent():
             self.log_writer = open(self.log_filename, 'w')
 
         if self.remote_connection:
-            self.agent = self.kernel.GetAgent(0)
+            self.agent = self.kernel.GetAgentByIndex(0)
         else:
             self.agent = self.kernel.CreateAgent(self.agent_name)
             self._source_agent()
