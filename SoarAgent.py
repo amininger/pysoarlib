@@ -246,19 +246,48 @@ class SoarAgent():
             result = self.agent.ExecuteCommandLine("source " + self.smem_source)
             if self.verbose:
                 self.print_handler(result)
+            else:
+                self._summarize_smem_source(result)
 
         if self.agent_source != None:
             self.print_handler("--------- SOURCING PRODUCTIONS ------------")
-            result = self.agent.ExecuteCommandLine("source " + self.agent_source)
+            result = self.agent.ExecuteCommandLine("source " + self.agent_source + " -v")
             if self.verbose:
                 self.print_handler(result)
+            else:
+                self._summarize_source(result)
         else:
             self.print_handler("agent_source not specified, no rules are being sourced")
+
+    # Prints a summary of the smem source command instead of every line (verbose = false)
+    def _summarize_smem_source(self, printout):
+        summary = []
+        n_added = 0
+        for line in printout.split('\n'):
+            if line == "Knowledge added to semantic memory.":
+                n_added += 1
+            else:
+                summary.append(line)
+        self.print_handler('\n'.join(summary))
+        self.print_handler("Knowledge added to semantic memory. [" + str(n_added) + " times]")
+
+    # Prints a summary of the agent source command instead of every line (verbose = false)
+    def _summarize_source(self, printout):
+        summary = []
+        for line in printout.split('\n'):
+            if line.startswith("Sourcing"):
+                continue
+            if line.startswith("warnings is now"):
+                continue
+            # Line is only * or # characters
+            if all(c in "#* " for c in line):
+                continue
+            summary.append(line)
+        self.print_handler('\n'.join(summary))
 
     def _on_init_soar(self):
         for connector in self.connectors.values():
             connector.on_init_soar()
-
 
     def _destroy_soar_agent(self):
         self.stop()
