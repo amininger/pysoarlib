@@ -180,11 +180,10 @@ class SoarAgent():
     def _read_config_file(self):
         """ Will read the given config file and update self.settings as necessary (wont overwrite kwarg settings)
 
-        Will throw an error if the file doesn't exist
         config_filename is a text file with lines of the form 'setting = value'"""
 
         # Add any settings in the config file (if it exists)
-        if self.config_filename is not None:
+        try:
             with open(self.config_filename, 'r') as fin:
                 config_args = [ line.split() for line in fin ]
 
@@ -194,6 +193,8 @@ class SoarAgent():
                     # Add settings from config file if not overridden in kwargs
                     if key not in self.kwarg_keys:
                         self.settings[key] = args[2]
+        except IOError:
+            pass
 
     def _apply_settings(self):
         """ Set up the SoarAgent object by copying settings or filling in default values """
