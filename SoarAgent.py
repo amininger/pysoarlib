@@ -57,6 +57,9 @@ class SoarAgent():
         self.print_handler = print_handler
         if print_handler == None:
             self.print_handler = print
+        self.print_event_handlers = []
+
+        self.connectors = {}
 
         # Gather settings, filling in defaults as needed
         self.kwarg_keys = set(kwargs.keys())
@@ -72,8 +75,6 @@ class SoarAgent():
         self.run_event_callback_id = -1
         self.print_event_callback_id = -1
         self.init_agent_callback_id = -1
-        self.connectors = {}
-        self.print_event_handlers = []
 
         if self.remote_connection:
             self.kernel = sml.Kernel.CreateRemoteConnection()
