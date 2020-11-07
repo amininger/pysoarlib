@@ -187,6 +187,9 @@ class SoarAgent():
 
         config_filename is a text file with lines of the form 'setting = value'"""
 
+        if self.config_filename is None:
+            return
+
         # Add any settings in the config file (if it exists)
         try:
             with open(self.config_filename, 'r') as fin:
