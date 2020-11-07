@@ -40,6 +40,9 @@ Adds the given connector and will invoke callbacks on it (such as on_input_phase
 `get_connector(name:str)`    
 Returns a connector of the given name, or None
 
+`has_connector(name:str) -> Boolean`    
+Returns true if the given connector exists
+
 `add_print_event_handler(handler)`   
 Will call the given handler during each soar print event (handler should be a method taking 1 string)
 

@@ -27,8 +27,8 @@ class SoarAgent():
         smem_source = [filename] (default=None)
             Soar file with smem add commands to source the agent is created
 
-        verbose = true|false (default=false)
-            If true, prints additional information when sourcing files
+        source_output = full|summary|none (default=summary)
+            Determines how much output is printed when sourcing files
 
         watch_level = [int] (default=1)
             The watch level to use (controls amount of info printed, 0=none, 5=all)
@@ -87,6 +87,10 @@ class SoarAgent():
     def add_connector(self, name, connector):
         """ Adds an AgentConnector to the agent """
         self.connectors[name] = connector
+
+    def has_connector(self, name):
+        """ Returns True if the agent has an AgentConnector with the given name """
+        return (name in self.connectors)
 
     def get_connector(self, name):
         """ Returns the AgentConnector with the given name, or None """
@@ -203,7 +207,7 @@ class SoarAgent():
         self.agent_source = self.settings.get("agent_source", None)
         self.smem_source = self.settings.get("smem_source", None)
 
-        self.verbose = self._parse_bool_setting("verbose", False)
+        self.source_output = self.settings.get("source_output", "summary")
         self.watch_level = int(self.settings.get("watch_level", 1))
         self.remote_connection = self._parse_bool_setting("remote_connection", False)
         self.spawn_debugger = self._parse_bool_setting("spawn_debugger", False)
@@ -246,22 +250,22 @@ class SoarAgent():
         if self.smem_source != None:
             self.print_handler("------------- SOURCING SMEM ---------------")
             result = self.agent.ExecuteCommandLine("source " + self.smem_source)
-            if self.verbose:
+            if self.source_output == "full":
                 self.print_handler(result)
-            else:
+            elif self.source_output == "summary":
                 self._summarize_smem_source(result)
 
         if self.agent_source != None:
             self.print_handler("--------- SOURCING PRODUCTIONS ------------")
             result = self.agent.ExecuteCommandLine("source " + self.agent_source + " -v")
-            if self.verbose:
+            if self.source_output == "full":
                 self.print_handler(result)
-            else:
+            elif self.source_output == "summary":
                 self._summarize_source(result)
         else:
             self.print_handler("agent_source not specified, no rules are being sourced")
 
-    # Prints a summary of the smem source command instead of every line (verbose = false)
+    # Prints a summary of the smem source command instead of every line (source_output = summary)
     def _summarize_smem_source(self, printout):
         summary = []
         n_added = 0
@@ -273,7 +277,7 @@ class SoarAgent():
         self.print_handler('\n'.join(summary))
         self.print_handler("Knowledge added to semantic memory. [" + str(n_added) + " times]")
 
-    # Prints a summary of the agent source command instead of every line (verbose = false)
+    # Prints a summary of the agent source command instead of every line (source_output = summary)
     def _summarize_source(self, printout):
         summary = []
         for line in printout.split('\n'):
