@@ -251,7 +251,8 @@ class SoarAgent():
         self.agent.ExecuteCommandLine("epmem --set database memory")
 
         if self.smem_source != None:
-            self.print_handler("------------- SOURCING SMEM ---------------")
+            if self.source_output != "none":
+                self.print_handler("------------- SOURCING SMEM ---------------")
             result = self.agent.ExecuteCommandLine("source " + self.smem_source)
             if self.source_output == "full":
                 self.print_handler(result)
@@ -259,7 +260,8 @@ class SoarAgent():
                 self._summarize_smem_source(result)
 
         if self.agent_source != None:
-            self.print_handler("--------- SOURCING PRODUCTIONS ------------")
+            if self.source_output != "none":
+                self.print_handler("--------- SOURCING PRODUCTIONS ------------")
             result = self.agent.ExecuteCommandLine("source " + self.agent_source + " -v")
             if self.source_output == "full":
                 self.print_handler(result)
