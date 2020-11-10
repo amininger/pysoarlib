@@ -233,7 +233,11 @@ class SoarAgent():
 
     def _create_soar_agent(self):
         if self.enable_log:
-            self.log_writer = open(self.log_filename, 'w')
+            try:
+                self.log_writer = open(self.log_filename, 'w')
+            except:
+                self.print_handler("ERROR: Cannot open log file " + self.log_filename)
+                self.log_writer = None
 
         if self.remote_connection:
             self.agent = self.kernel.GetAgentByIndex(0)
@@ -311,7 +315,7 @@ class SoarAgent():
         if not self.remote_connection:
             self.kernel.DestroyAgent(self.agent)
         self.agent = None
-        if self.enable_log:
+        if self.log_writer is not None:
             self.log_writer.close()
             self.log_writer = None
 
@@ -351,7 +355,7 @@ class SoarAgent():
             if self.write_to_stdout:
                 message = message.strip()
                 self.print_handler(message)
-            if self.enable_log:
+            if self.log_writer:
                 self.log_writer.write(message)
                 self.log_writer.flush()
             for ph in self.print_event_handlers:
