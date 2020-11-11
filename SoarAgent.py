@@ -232,12 +232,12 @@ class SoarAgent():
         self.is_running = False
 
     def _create_soar_agent(self):
+        self.log_writer = None
         if self.enable_log:
             try:
                 self.log_writer = open(self.log_filename, 'w')
             except:
                 self.print_handler("ERROR: Cannot open log file " + self.log_filename)
-                self.log_writer = None
 
         if self.remote_connection:
             self.agent = self.kernel.GetAgentByIndex(0)
