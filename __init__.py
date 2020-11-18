@@ -24,6 +24,7 @@ sml.Identifier.GetChildId = get_child_id
 sml.Identifier.GetAllChildIds = get_all_child_ids
 sml.Identifier.GetAllChildValues = get_all_child_values
 sml.Identifier.GetAllChildWmes = get_all_child_wmes
+sml.Identifier.__lt__ = lambda self, other: self.GetIdentifierSymbol() < other.GetIdentifierSymbol()
 
 from .WMInterface import WMInterface
 from .SoarWME import SoarWME

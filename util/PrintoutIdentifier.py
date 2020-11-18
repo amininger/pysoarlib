@@ -18,6 +18,9 @@ class PrintoutIdentifier:
         self.wmes = wmes
         self.root_id = root_id
 
+    def __lt__(self, other):
+        return self.root_id < other.root_id
+
     def GetIdentifierSymbol(self):
         return self.root_id
 
