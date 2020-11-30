@@ -92,6 +92,15 @@ class TimeConnector(AgentConnector):
         self._remove_from_wm()
         self.reset_time()
 
+    def set_time(self, hour, min, sec=0, ms=0):
+        if not self.sim_clock:
+            return
+        self.clock_info[0] = hour
+        self.clock_info[1] = min
+        self.clock_info[2] = sec
+        self.clock_info[3] = ms
+        self.clock_info[4] = int(time.mktime(datetime.datetime(2020, 1, 1, hour, min, sec, ms).timetuple()))
+
     def on_input_phase(self, input_link):
         # Update the global timers (time since agent start)
         self.milsecs.set_value(int(current_time_ms() - self.start_time))
