@@ -33,7 +33,7 @@ class TimeConnector(AgentConnector):
         sim_clock - If False: clock uses real-time. If True: clock is simulated
         clock_step_ms - If sim_clock=True, this is how much the clock advances every DC
         """
-        super().__init__(self, agent)
+        AgentConnector.__init__(self, agent)
 
         self.include_ms = include_ms
         self.sim_clock = sim_clock
@@ -43,6 +43,9 @@ class TimeConnector(AgentConnector):
         self.seconds = SoarWME("seconds", 0) # number of real-time seconds elapsed since start of agent
         self.milsecs = SoarWME("milliseconds", 0) # number of real-time milliseconds elapsed since start of agent
         self.steps = SoarWME("steps", 0)     # number of decision cycles the agent has taken
+
+        # Output Link Command: (<out> ^set-time <st>) (<st> ^hour <h> ^minute <min>)
+        self.add_output_command("set-time")
 
         # Clock info, hour minute second millisecond
         self.clock_id = None
@@ -118,6 +121,16 @@ class TimeConnector(AgentConnector):
             self._add_to_wm(input_link)
         else:
             self._update_wm()
+
+    def on_output_event(self, command_name, root_id):
+        if command_name == "set-time":
+            self.process_set_time_command(root_id)
+    
+    def process_set_time_command(self, time_id):
+        h = time_id.GetChildInt('hour')
+        m = time_id.GetChildInt('minute')
+        self.set_time(h, m)
+        time_id.CreateStringWME('status', 'complete')
 
     ### Internal methods
 
