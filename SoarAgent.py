@@ -6,6 +6,7 @@ from time import sleep
 
 import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
+from .TimeConnector import TimeConnector
 
 class SoarAgent():
     """ A wrapper class for creating and using a soar SML Agent """
@@ -50,6 +51,10 @@ class SoarAgent():
 
         remote_connection = true|false (default=false)
             If true, will connect to a remote kernel instead of creating a new one
+
+        use_time_connector = true|false (default=false)
+            If true, will create a TimeConnector to add time info the the input-link
+            See the Readme or TimeConnector.py for additional settings to control its behavior
         
         Note: Still need to call connect() to register event handlers
         """
@@ -82,6 +87,8 @@ class SoarAgent():
             self.kernel = sml.Kernel.CreateKernelInNewThread()
             self.kernel.SetAutoCommit(False)
 
+        if self.use_time_connector:
+            self.add_connector("time", TimeConnector(self, **self.settings))
         self._create_soar_agent()
 
     def add_connector(self, name, connector):
@@ -218,6 +225,7 @@ class SoarAgent():
         self.write_to_stdout = self._parse_bool_setting("write_to_stdout", False)
         self.enable_log = self._parse_bool_setting("enable_log", False)
         self.log_filename = self.settings.get("log_filename", "agent-log.txt")
+        self.use_time_connector = self._parse_bool_setting("use_time_connector", False)
 
     def _parse_bool_setting(self, name, default):
         if name not in self.settings:

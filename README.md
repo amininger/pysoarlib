@@ -13,6 +13,7 @@ help(pysoarlib.SoarAgent)
 ```
 
 * [SoarAgent](#soaragent)
+* [Config Settings](#configsettings)
 * [AgentConnector](#agentconnector)
 * [IdentifierExtensions](#idextensions)
 * [WMInterface](#wminterface)
@@ -69,26 +70,29 @@ Will stop the agent destroy the agent/kernel
 
 
 ## Config Settings (kwargs or config file)
-* agent_name = [name]     
-The name of the agent to use when creating it
-* agent_source = [filename]     
-Soar file to source containing the agent's soar code
-* smem_source = [filename]     
-Soar file to source containing smem --add commands
-* verbose = [bool]     
-If true, prints additional info when sourcing
-* watch_level = [int]     
-Determines how much detail to print
-* spawn_debugger = [bool]     
-If true, will spawn the soar debugger
-* start_running = [bool]     
-If true, will run the agent after it is created + connected
-* write_to_stdout = [bool]     
-If true, will echo any soar output/printing via print_handler
-* enable_log = [bool]     
-If true, will write any soar output/printing to file agent-log.log
-* log_filename = [filename]    
-Optionally specify the name of the log file
+<a name="configsettings"></a>
+
+These can be passed as keyword arguments to the SoarAgent constructor, 
+or you can create a config file that contains these settings. 
+
+| Argument           | Type     | Default    | Description                              |
+| ------------------ | -------- | ---------- | ---------------------------------------- |
+| `agent_name`       | str      | soaragent  | The soar agent's name |
+| `agent_source`     | filename |            | The root soar file to source the agent productions  |
+| `smem_source`      | filename |            | The root soar file that sources smem add commands |
+| `source_output`    | enum str | summary    | How much detail to print when sourcing files: none, summary, or full |
+| `watch_level`      | int      | 1          | Sets the soar watch/trace level, how much to print each DC (0=none) |
+| `spawn_debugger`   | bool     | false      | If true, spawns the soar java debugger |
+| `start_running`    | bool     | false      | If true, will automatically start running the agent |
+| `write_to_stdout`  | bool     | false      | If true, will print all soar output to the print_handler |
+| `print_handler`    | method   | print      | A method taking 1 string arg, handles agent output |
+| `enable_log`       | bool     | false      | If true, writes all soar/agent output to a file |
+| `log_filename`     | filename | agent-log.txt | The name of the log file to create |
+| **time settings** <a name="timesettings"></a> |          |            |               |
+| `use_time_connector`| bool    | false      | If true, creates a TimeConnector to put time info on the input-link |
+| `clock_include_ms` | bool     | true       | Will include milliseconds for elapsed and clock times |
+| `sim_clock`        | bool     | false      | If false, the clock shows real time. If true, it advances a fixed amount each DC |
+| `clock_step_ms`    | int      | 50         | The number of milliseconds the simulated clock advances each decision cycle |
 
 Instead of passing as arguments, you can include them in a file specified by config_filename
 Each line in the file should be 'setting = value'
@@ -200,13 +204,30 @@ Here pos, rot, and scl are lists of 3 numbers (like [1, 2.5, 3.1])
 # TimeConnector
 An AgentConnector that will create time info on the input-link. 
 Includes elapsed time since the agent started, and can have a real-time or simulated wall clock. 
+It is enabled through the agent setting `use-time-connector=True`
+There are several settings that control its behavior as described in [Config Settings](#timesettings). 
 
 
 ```
 # Will add and update the following on the input-link:
-([input-link] ^time [t])
-([t] ^seconds [secs] # Number of real-time seconds elapsed since the agent started
-     ^steps [steps]) # Number of decision cycles since the agent started
+([il] ^time [t])
+([t] ^seconds [secs] # real-time seconds elapsed since start of agent
+     ^milliseconds [ms] # real-time milliseconds elapsed since start
+     ^steps [steps] # number of decision cycles since start of agent
+     ^clock [clock])
+([clock] ^hour [hr] # 0-23
+         ^minute [min] # 0-59
+         ^second [sec] # 0-59
+         ^millisecond [ms] # 0-999
+         ^epoch [sec] # Unix epoch time in seconds)
+```
+
+Also, if using a simulated clock, the agent can change the time itself using an output command:
+```
+([out] ^set-time [cmd])
+([cmd] ^hour 9
+       ^minute 15
+       ^second 30) # optional 
 ```
 
 <a name="util"></a>

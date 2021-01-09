@@ -18,33 +18,42 @@ class TimeConnector(AgentConnector):
         (<clock> ^hour <hr> # 0-23
                  ^minute <min> # 0-59
                  ^second <sec> # 0-59
-                 ^millisecond <ms> # 0-999)
-        
-        By default the clock is the current local time
-        If sim_clock=True, it will instead start at 8AM and advance
-            a fixed number of milliseconds every decision cycle (clock_step_ms)
-            This can be useful for consistent testing
+                 ^millisecond <ms> # 0-999
+                 ^epoch <sec> # Unix epoch time in seconds)
+
+        Also, if using a simulated clock, the agent can send the following output-command:
+        (<out> ^set-time <st>) (<st> ^hour <h> ^minute <min> ^second <sec>)
+
+        Settings: 
+            clock_include_ms: bool [default=True]
+                If true, includes milliseconds with both elapsed time and clock time
+            sim_clock: bool [default=False]
+                If true, uses a simulated clock that starts at 8AM and advances a fixed amount every DC
+                If false, will use the local real time
+            clock_step_ms: int [default=5000]
+                If using the simulated clock, this is the number of milliseconds it will increase every DC
+
     """
-    def __init__(self, agent, include_ms=True, sim_clock=False, clock_step_ms=5000):
+    def __init__(self, agent, clock_include_ms=True, sim_clock=False, clock_step_ms=50, **kwargs):
         """ Initializes the connector with the time info
 
-        include_ms - If True: will include millisecond resolution on clock/elapsed
+        clock_include_ms - If True: will include millisecond resolution on clock/elapsed
             (Setting to false will mean fewer changes to the input-link, slightly faster)
         sim_clock - If False: clock uses real-time. If True: clock is simulated
         clock_step_ms - If sim_clock=True, this is how much the clock advances every DC
         """
         AgentConnector.__init__(self, agent)
 
-        self.include_ms = include_ms
+        self.include_ms = clock_include_ms
         self.sim_clock = sim_clock
-        self.clock_step_ms = clock_step_ms
+        self.clock_step_ms = int(clock_step_ms)
 
         self.time_id = None
         self.seconds = SoarWME("seconds", 0) # number of real-time seconds elapsed since start of agent
         self.milsecs = SoarWME("milliseconds", 0) # number of real-time milliseconds elapsed since start of agent
         self.steps = SoarWME("steps", 0)     # number of decision cycles the agent has taken
 
-        # Output Link Command: (<out> ^set-time <st>) (<st> ^hour <h> ^minute <min>)
+        # Output Link Command: (<out> ^set-time <st>) (<st> ^hour <h> ^minute <min> ^second <sec>)
         self.add_output_command("set-time")
 
         # Clock info, hour minute second millisecond
@@ -99,8 +108,8 @@ class TimeConnector(AgentConnector):
         if not self.sim_clock:
             return
         self.clock_info[0] = hour
-        self.clock_info[1] = min
-        self.clock_info[2] = sec
+        self.clock_info[1] = (0 if min is None else min)
+        self.clock_info[2] = (0 if sec is None else sec)
         self.clock_info[3] = ms
         self.clock_info[4] = int(time.mktime(datetime.datetime(2020, 1, 1, hour, min, sec, ms).timetuple()))
 
@@ -129,7 +138,8 @@ class TimeConnector(AgentConnector):
     def process_set_time_command(self, time_id):
         h = time_id.GetChildInt('hour')
         m = time_id.GetChildInt('minute')
-        self.set_time(h, m)
+        s = time_id.GetChildInt('second')
+        self.set_time(h, m, s)
         time_id.CreateStringWME('status', 'complete')
 
     ### Internal methods
