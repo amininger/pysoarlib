@@ -9,10 +9,10 @@ Methods do have docstrings, to read help information open a python shell and typ
 ```
 import pysoarlib
 help(pysoarlib)
-help(pysoarlib.SoarAgent)
+help(pysoarlib.SoarClient)
 ```
 
-* [SoarAgent](#soaragent)
+* [SoarClient](#soarclient)
 * [Config Settings](#configsettings)
 * [AgentConnector](#agentconnector)
 * [IdentifierExtensions](#idextensions)
@@ -22,17 +22,17 @@ help(pysoarlib.SoarAgent)
 * [TimeConnector](#timeconnector)
 * [util](#util)
 
-<a name="soaragent"></a>
-# SoarAgent
+<a name="soarclient"></a>
+# SoarClient
 Defines a class used for creating a soar agent, sending commands, running it, etc.
-There are a number of settings that you can use to configure the agent (see following subsection) and
+There are a number of settings that you can use to configure the client (see following subsection) and
 can specify either by including them in the config file or by giving as keyword arguments
 in the constructor. 
 
-`SoarAgent(config_filename=None, print_handler=None, **kwargs)`     
+`SoarClient(config_filename=None, print_handler=None, **kwargs)`     
 Will create the soar kernel and agent, as well as source the agent files. 
 `print_handler` specifies how output is handled (defaults to python print) and 
-`config_filename` names a file with agent settings in it
+`config_filename` names a file with client settings in it
 
 
 `add_connector(AgentConnector, name:str)`    
@@ -66,13 +66,13 @@ Sends the given command to the agent and returns the result as a string. If prin
 Completely destroys the agent and creates + sources a new one
 
 `kill()`     
-Will stop the agent destroy the agent/kernel
+Will stop the agent and destroy the agent/kernel
 
 
 ## Config Settings (kwargs or config file)
 <a name="configsettings"></a>
 
-These can be passed as keyword arguments to the SoarAgent constructor, 
+These can be passed as keyword arguments to the SoarClient constructor, 
 or you can create a config file that contains these settings. 
 
 | Argument           | Type     | Default    | Description                              |
@@ -109,8 +109,8 @@ spawn_debugger = false
 # AgentConnector
 Defines an abstract base class for creating classes that connect to Soar's input/output links
 
-`AgentConnector(agent:SoarAgent, print_handler:None)`     
-print_handler determines how output is printed, defaults to normal python print
+`AgentConnector(client:SoarClient)`     
+
 
 `add_output_command(command_name:str)`     
 Will register a handler that listens to output link commands with the given name
@@ -204,7 +204,7 @@ Here pos, rot, and scl are lists of 3 numbers (like [1, 2.5, 3.1])
 # TimeConnector
 An AgentConnector that will create time info on the input-link. 
 Includes elapsed time since the agent started, and can have a real-time or simulated wall clock. 
-It is enabled through the agent setting `use-time-connector=True`
+It is enabled through the client setting `use-time-connector=True`
 There are several settings that control its behavior as described in [Config Settings](#timesettings). 
 
 

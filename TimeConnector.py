@@ -34,7 +34,7 @@ class TimeConnector(AgentConnector):
                 If using the simulated clock, this is the number of milliseconds it will increase every DC
 
     """
-    def __init__(self, agent, clock_include_ms=True, sim_clock=False, clock_step_ms=50, **kwargs):
+    def __init__(self, client, clock_include_ms=True, sim_clock=False, clock_step_ms=50, **kwargs):
         """ Initializes the connector with the time info
 
         clock_include_ms - If True: will include millisecond resolution on clock/elapsed
@@ -42,7 +42,7 @@ class TimeConnector(AgentConnector):
         sim_clock - If False: clock uses real-time. If True: clock is simulated
         clock_step_ms - If sim_clock=True, this is how much the clock advances every DC
         """
-        AgentConnector.__init__(self, agent)
+        AgentConnector.__init__(self, client)
 
         self.include_ms = clock_include_ms
         self.sim_clock = sim_clock

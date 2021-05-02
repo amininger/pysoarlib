@@ -8,7 +8,7 @@ import Python_sml_ClientInterface as sml
 from .SoarWME import SoarWME
 from .TimeConnector import TimeConnector
 
-class SoarAgent():
+class SoarClient():
     """ A wrapper class for creating and using a soar SML Agent """
     def __init__(self, print_handler=None, config_filename=None, **kwargs):
         """ Will create a soar kernel and agent
@@ -114,7 +114,7 @@ class SoarAgent():
             return
 
         self.is_running = True
-        thread = Thread(target = SoarAgent._run_thread, args = (self, ))
+        thread = Thread(target = SoarClient._run_thread, args = (self, ))
         thread.start()
 
     def stop(self):
@@ -138,13 +138,13 @@ class SoarAgent():
             return
 
         self.run_event_callback_id = self.agent.RegisterForRunEvent(
-            sml.smlEVENT_BEFORE_INPUT_PHASE, SoarAgent._run_event_handler, self)
+            sml.smlEVENT_BEFORE_INPUT_PHASE, SoarClient._run_event_handler, self)
 
         self.print_event_callback_id = self.agent.RegisterForPrintEvent(
-                sml.smlEVENT_PRINT, SoarAgent._print_event_handler, self)
+                sml.smlEVENT_PRINT, SoarClient._print_event_handler, self)
 
         self.init_agent_callback_id = self.kernel.RegisterForAgentEvent(
-                sml.smlEVENT_BEFORE_AGENT_REINITIALIZED, SoarAgent._init_agent_handler, self)
+                sml.smlEVENT_BEFORE_AGENT_REINITIALIZED, SoarClient._init_agent_handler, self)
 
         for connector in self.connectors.values():
             connector.connect()
@@ -212,7 +212,7 @@ class SoarAgent():
             pass
 
     def _apply_settings(self):
-        """ Set up the SoarAgent object by copying settings or filling in default values """
+        """ Set up the SoarClient object by copying settings or filling in default values """
         self.agent_name = self.settings.get("agent_name", "soaragent")
         self.agent_source = self.settings.get("agent_source", None)
         self.smem_source = self.settings.get("smem_source", None)

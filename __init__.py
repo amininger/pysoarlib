@@ -2,7 +2,7 @@
 
 Depends on the Python_sml_ClientInterface, so make sure that SOAR_HOME is on the PYTHONPATH
 
-SoarAgent and AgentConnector are used to create an agent
+SoarClient and AgentConnector are used to create an agent
 WMInterface is a standardized interface for adding/removing structures from working memory
 SoarWME is a wrapper for creating working memory elements
 SVSCommands will generate svs command strings for some common use cases
@@ -13,7 +13,7 @@ Also adds helper methods to the Identifier class to access children more easily
 """
 import Python_sml_ClientInterface as sml
 
-__all__ = ["WMInterface", "SoarWME", "SVSCommands", "AgentConnector", "SoarAgent", "TimeConnector"]
+__all__ = ["WMInterface", "SoarWME", "SVSCommands", "AgentConnector", "SoarClient", "TimeConnector"]
 
 # Extend the sml Identifier class definition with additional utility methods
 from .IdentifierExtensions import *
@@ -30,7 +30,7 @@ from .WMInterface import WMInterface
 from .SoarWME import SoarWME
 from .SVSCommands import SVSCommands
 from .AgentConnector import AgentConnector
-from .SoarAgent import SoarAgent
+from .SoarClient import SoarClient
 from .TimeConnector import TimeConnector
 
 

@@ -1,6 +1,6 @@
 """ Generic Base Class for interfacing with a soar agent's input/output links
 
-A Connector can be added to a SoarAgent and can handle input/output 
+A Connector can be added to a SoarClient and can handle input/output 
     while taking care of specific SML calls and event registering
 """
 
@@ -20,46 +20,42 @@ class AgentConnector(object):
 
     Look at LanguageConnector for an example of an AgentConnector used in practice
     """
-    def __init__(self, agent, print_handler=None):
+    def __init__(self, client):
         """ Initialize the Connector (but won't register event handlers until connect)
 
-        agent should be an instance of SoarAgent
-        print_handler defaults to python print, but can be customized
+        client should be an instance of SoarClient
         """
-        self.agent = agent
+        self.client = client
         self.connected = False
         self.output_handler_ids = { }
 
-        self.print_handler = print_handler
-        if print_handler == None:
-            self.print_handler = print
 
     def add_output_command(self, command_name):
         """ Will cause the connector to handle commands with the given name on the output-link """
         if self.connected:
-            self.output_handler_ids[command_name] = self.agent.agent.AddOutputHandler(
+            self.output_handler_ids[command_name] = self.client.agent.AddOutputHandler(
                     command_name, AgentConnector._output_event_handler, self)
         else:
             self.output_handler_ids[command_name] = -1
 
     def connect(self):
-        """ Adds event handlers, automatically called by the SoarAgent """
+        """ Adds event handlers, automatically called by the SoarClient """
         if self.connected:
             return
 
         for command_name in self.output_handler_ids:
-            self.output_handler_ids[command_name] = self.agent.agent.AddOutputHandler(
+            self.output_handler_ids[command_name] = self.client.agent.AddOutputHandler(
                     command_name, AgentConnector._output_event_handler, self)
 
         self.connected = True
 
     def disconnect(self):
-        """ Removes event handlers, automatically called by the SoarAgent """
+        """ Removes event handlers, automatically called by the SoarClient """
         if not self.connected:
             return
 
         for command_name in self.output_handler_ids:
-            self.agent.agent.RemoveOutputHandler(self.output_handler_ids[command_name])
+            self.client.agent.RemoveOutputHandler(self.output_handler_ids[command_name])
             self.output_handler_ids[command_name] = -1
 
         self.connected = False
@@ -87,6 +83,6 @@ class AgentConnector(object):
                 root_id = wme.ConvertToIdentifier()
                 self.on_output_event(att_name, root_id)
         except:
-            self.print_handler("ERROR IN OUTPUT EVENT HANDLER")
-            self.print_handler(traceback.format_exc())
-            self.print_handler("--------- END ---------------")
+            self.client.print_handler("ERROR IN OUTPUT EVENT HANDLER")
+            self.client.print_handler(traceback.format_exc())
+            self.client.print_handler("--------- END ---------------")

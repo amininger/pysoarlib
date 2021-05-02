@@ -4,9 +4,9 @@ class PrintoutIdentifier:
     """ Represents an identifier that was parsed from a soar print command via parse_wm_printout
         and implements the IdentifierExtensions interface for it """
 
-    def create(agent, id, depth):
+    def create(client, id, depth):
         """ Will print the given identifier to the given depth and wrap the result in a PrintoutIdentifier """
-        printout = agent.execute_command("p " + id + " -d " + str(depth))
+        printout = client.execute_command("p " + id + " -d " + str(depth))
         if printout.strip().startswith("There is no identifier"):
             return None
         wmes = parse_wm_printout(printout)

@@ -1,8 +1,8 @@
 from pysoarlib import *
 
 class SimpleConnector(AgentConnector):
-    def __init__(self, agent):
-        AgentConnector.__init__(self, agent)
+    def __init__(self, client):
+        AgentConnector.__init__(self, client)
         self.add_output_command("increase-number")
         self.num = SoarWME("number", 0)
 
@@ -25,10 +25,10 @@ class SimpleConnector(AgentConnector):
             self.num.set_value(self.num.val + number)
         root_id.AddStatusComplete()
 
-agent = SoarAgent(config_filename="example.config", write_to_stdout=True)
-agent.add_connector("simple", SimpleConnector(agent))
-agent.connect()
+client = SoarClient(config_filename="example.config", write_to_stdout=True)
+client.add_connector("simple", SimpleConnector(client))
+client.connect()
 
-agent.execute_command("run 12")
+client.execute_command("run 12")
 
-agent.kill()
+client.kill()
